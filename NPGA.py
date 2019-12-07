@@ -4,7 +4,7 @@
 # Niched Pareto Genetic Algorithm (NPGA)
 #
 # From Master’s Degree Thesis:
-# 'Genetic Algorithm to automate Autoencoder architecture configuration'
+# 'Niched Pareto Genetic Algorithm to automate Autoencoder architecture configuration'
 #
 # Author: Emilio Schinina' <emilioschi@gmail.com>
 # Copyright (C) 2019 Emilio Schinina'
