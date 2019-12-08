@@ -4,7 +4,7 @@
 # Niched Pareto Genetic Algorithm (NPGA)
 #
 # From Master’s Degree Thesis:
-# 'Niched Pareto Genetic Algorithm to automate Autoencoder architecture configuration'
+# 'Genetic Algorithm to automate Autoencoder architecture configuration'
 #
 # Author: Emilio Schinina' <emilioschi@gmail.com>
 # Copyright (C) 2019 Emilio Schinina'
@@ -67,21 +67,21 @@ def IsNonDominatedableFast(costs, return_mask = True):
 	# :return: An array of indices of pareto-efficient points.
 	#     If return_mask is True, this will be an (n_points, ) boolean array
 	#     Otherwise it will be a (n_efficient_points, ) integer array of indices.
-    NonDominatedable = np.arange(costs.shape[0])
-    NumPoints = costs.shape[0]
-    NextPointIndex = 0  # Next index in the NonDominatedable array to search for
-    while NextPointIndex < len(costs):
-        NondominatedPointMask = np.any(costs < costs[NextPointIndex], axis = 1)
-        NondominatedPointMask[NextPointIndex] = True
-        NonDominatedable = NonDominatedable[NondominatedPointMask]  # Remove dominated points
-        costs = costs[NondominatedPointMask]
-        NextPointIndex = np.sum(NondominatedPointMask[:NextPointIndex]) + 1
-    if return_mask:
-        NonDominatedable_mask = np.zeros(NumPoints, dtype = bool)
-        NonDominatedable_mask[NonDominatedable] = True
-        return NonDominatedable_mask
-    else:
-        return NonDominatedable
+	NonDominatedable = np.arange(costs.shape[0])
+	NumPoints = costs.shape[0]
+	NextPointIndex = 0  # Next index in the NonDominatedable array to search for
+	while NextPointIndex < len(costs):
+		NondominatedPointMask = np.any(costs < costs[NextPointIndex], axis = 1)
+		NondominatedPointMask[NextPointIndex] = True
+		NonDominatedable = NonDominatedable[NondominatedPointMask]  # Remove dominated points
+		costs = costs[NondominatedPointMask]
+		NextPointIndex = np.sum(NondominatedPointMask[:NextPointIndex]) + 1
+	if return_mask:
+		NonDominatedable_mask = np.zeros(NumPoints, dtype = bool)
+		NonDominatedable_mask[NonDominatedable] = True
+		return NonDominatedable_mask
+	else:
+		return NonDominatedable
 
 class Statistics:
 	def __init__(self, number_objective, fastmode):
@@ -407,8 +407,10 @@ class NichedParetoGeneticAlgorithm:
 
 		# Crossover points are randomly chosen for parent A
 		crossoverpointstart, crossoverpointend = random.sample(range(1, lenSmall + 1), 2)
-		crossoverpointstart	 = min(crossoverpointstart, crossoverpointend)
-		crossoverpointend	 = max(crossoverpointstart, crossoverpointend)
+		crossoverpointtmp1 = crossoverpointstart
+		crossoverpointtmp2 = crossoverpointend
+		crossoverpointstart	 = min(crossoverpointtmp1, crossoverpointtmp2)
+		crossoverpointend	 = max(crossoverpointtmp1, crossoverpointtmp2)
 
 		childA.extend(parentB.Genes[0:crossoverpointstart])
 		childA.extend(parentA.Genes[crossoverpointstart:crossoverpointend])
