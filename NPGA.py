@@ -22,6 +22,7 @@
 # limitations under the License.
 
 import random, math
+import queue, threading
 import numpy as np
 
 # Utility funcion
@@ -148,7 +149,7 @@ class NichedParetoGeneticAlgorithm:
 	chromosome_length_set, population_size = 30, max_generation = 100,
 	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
 	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
-	candidate_size = 2, niche_radius = 1, fastmode = False,
+	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
 	fnMutation = None, fnCrossover = None):
 		# Functions
 		self.OBJECTIVE_FUNCTION	 = fnGetFitness
@@ -200,19 +201,58 @@ class NichedParetoGeneticAlgorithm:
 		self.population = []
 		self.history = {'Genes' : [], 'Fitness' : []}
 
+		self.MULTITHREADMODE = multithreadmode
+
+	def __ThreadObjectiveFunction(self, genes, queue):
+		if genes in self.history['Genes']:
+			index = self.history['Genes'].index(genes)
+			queue.put((genes, self.history['Fitness'][index]))
+		else:
+			fitness = self.OBJECTIVE_FUNCTION(genes)
+			queue.put((genes, fitness))
+
 	def __Evaluate(self):
-		for chromosome in self.population:
-			if chromosome.Genes in self.history['Genes']:
-				index = self.history['Genes'].index(chromosome.Genes)
-				chromosome.Fitness = self.history['Fitness'][index]
-			else:
+		if self.MULTITHREADMODE:
+			threads = []
+			tmp = []
+			queued_request = queue.Queue()
+
+			for chromosome in self.population:
 				# call objective_function
-				chromosome.Fitness = self.OBJECTIVE_FUNCTION(chromosome.Genes)
-				chromosome.Fitness = np.asarray(chromosome.Fitness, dtype = np.float64)
-				self.history['Genes'].append(chromosome.Genes)
-				self.history['Fitness'].append(chromosome.Fitness)
-				if np.all(chromosome.Fitness <= self.OPTIMAL_FITNESS):
-					return ''.join(chromosome.Genes), chromosome.Fitness, True
+				process = threading.Thread(
+							target = self.__ThreadObjectiveFunction,
+							args=(chromosome.Genes, queued_request,)
+							)
+				process.start()
+				threads.append(process)
+
+			for process in threads:
+				process.join()
+
+			for _ in range(queued_request.qsize()):
+				genes, fitness = queued_request.get()
+				fitness = np.asarray(fitness, dtype = np.float64)
+				tmp.append(Chromosome(len(genes), genes, fitness, "MultiThreadMode"))
+				self.history['Genes'].append(genes)
+				self.history['Fitness'].append(fitness)
+				if np.all(fitness <= self.OPTIMAL_FITNESS):
+					return ''.join(genes), fitness, True
+
+			self.population = tmp
+
+		else: # no multithreadmode
+			for chromosome in self.population:
+				if chromosome.Genes in self.history['Genes']:
+					index = self.history['Genes'].index(chromosome.Genes)
+					chromosome.Fitness = self.history['Fitness'][index]
+				else:
+					# call objective_function
+					chromosome.Fitness = self.OBJECTIVE_FUNCTION(chromosome.Genes)
+					chromosome.Fitness = np.asarray(chromosome.Fitness, dtype = np.float64)
+					self.history['Genes'].append(chromosome.Genes)
+					self.history['Fitness'].append(chromosome.Fitness)
+					if np.all(chromosome.Fitness <= self.OPTIMAL_FITNESS):
+						return ''.join(chromosome.Genes), chromosome.Fitness, True
 
 		EDGenes, EDfitness = self.Statistics.Update(self.population, self.history)
 		self.DISPLAY_FUNCTION(self.population, self.Statistics)
@@ -225,7 +265,7 @@ class NichedParetoGeneticAlgorithm:
 
 		# Each of candidates are then compared against each individual
 		# in the comparison set.
-		nonDominatedable = [True] * self.CANDIDATE_SIZE
+		nonDominatedable = np.ones((self.CANDIDATE_SIZE,), dtype=bool)
 		for e, i in enumerate(compareindexset[:self.CANDIDATE_SIZE]):
 			fitnesses = []
 			fitnesses.append(self.population[i].Fitness)
@@ -244,8 +284,9 @@ class NichedParetoGeneticAlgorithm:
 		# is not, the latter is selected for reproduction. If neither or both
 		# are dominated by the comparison set, then we must use sharing to
 		# choose a winner.
-		if nonDominatedable.count(True) == 1:
-			candidateindex = compareindexset[nonDominatedable.index(True)]
+		if np.count_nonzero(nonDominatedable == True) == 1:
+			itemindex = np.where(nonDominatedable == True)[0][0]
+			candidateindex = compareindexset[itemindex]
 			return self.population[candidateindex], False, []
 		else:
 			return None, True, compareindexset[:self.CANDIDATE_SIZE]
