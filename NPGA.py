@@ -137,12 +137,10 @@ class Statistics:
 		return self.EuclideanBetter['Genes'], self.EuclideanBetter['Fitness']
 
 class Chromosome:
-	def __init__(self, dimention, genes, fitness, strategy):
+	def __init__(self, dimention, genes, fitness):
 		self.Length		 = dimention
 		self.Genes		 = genes
 		self.Fitness	 = fitness
-		self.Strategy	 = strategy
-		self.Age		 = 0
 
 class NichedParetoGeneticAlgorithm:
 	def __init__(self, fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
@@ -232,7 +230,7 @@ class NichedParetoGeneticAlgorithm:
 			for _ in range(queued_request.qsize()):
 				genes, fitness = queued_request.get()
 				fitness = np.asarray(fitness, dtype = np.float64)
-				tmp.append(Chromosome(len(genes), genes, fitness, "MultiThreadMode"))
+				tmp.append(Chromosome(len(genes), genes, fitness))
 				self.history['Genes'].append(genes)
 				self.history['Fitness'].append(fitness)
 				if np.all(fitness <= self.OPTIMAL_FITNESS):
@@ -331,16 +329,7 @@ class NichedParetoGeneticAlgorithm:
 		# It generates random string
 		genlen = random.choices(self.LENGTH_SET, k = 1)[0]
 		child = random.choices(self.CHROMOSOME_SET, k = genlen)
-		return Chromosome(genlen, child, -1, "Generation")
-
-	def __Reproduction(self, parentA, parentB):
-		# The reproduction operator makes duplicate of a string,
-		# according to its fitness value.
-		parentA.Age = parentA.Age + 1
-		parentB.Age = parentB.Age + 1
-		parentA.Strategy = "Reproduction"
-		parentB.Strategy = "Reproduction"
-		return parentA, parentB
+		return Chromosome(genlen, child, -1)
 
 	def __ShrinkMutation(self, parent):
 		# Erase genes.
@@ -353,7 +342,7 @@ class NichedParetoGeneticAlgorithm:
 		# It erases genes at the end
 		child.extend(parent.Genes[:-mutationquantity])
 
-		return Chromosome(parent.Length - mutationquantity, child, -1, "ShrinkMutation")
+		return Chromosome(parent.Length - mutationquantity, child, -1)
 
 	def __GrowthMutation(self, parent):
 		child = []
@@ -367,46 +356,48 @@ class NichedParetoGeneticAlgorithm:
 		# It grows at the end
 		child.extend(random.choices(self.CHROMOSOME_SET, k = mutationquantity))
 
-		return Chromosome(parent.Length + mutationquantity, child, -1, "GrowthMutation")
+		return Chromosome(parent.Length + mutationquantity, child, -1)
 
 	def __LengthMutation(self, parent):
-		switcher = {
-			0 : self.__GrowthMutation,
-			1 : self.__ShrinkMutation
-			}
+		if FlipCoin(self.LENGTH_MUTATION_RATE):
+			switcher = {
+				0 : self.__GrowthMutation,
+				1 : self.__ShrinkMutation
+				}
 
-		lengthprobability = {
-			'growthprobability' : self.GROWTH_RATE,
-			'shrinkprobability' : self.SHRINK_RATE
-			}
+			lengthprobability = {
+				'growthprobability' : self.GROWTH_RATE,
+				'shrinkprobability' : self.SHRINK_RATE
+				}
 
-		if self.MAX_LENGTH_SET == parent.Length:
-			return self.__ShrinkMutation(parent)
+			if self.MAX_LENGTH_SET == parent.Length:
+				return self.__ShrinkMutation(parent)
 
-		if self.MIN_LENGTH_SET == parent.Length:
-			return self.__GrowthMutation(parent)
+			if self.MIN_LENGTH_SET == parent.Length:
+				return self.__GrowthMutation(parent)
 
-		totalprobability = sum(lengthprobability.values())
-		realprobability = [p / totalprobability for p in lengthprobability.values()]
+			totalprobability = sum(lengthprobability.values())
+			realprobability = [p / totalprobability for p in lengthprobability.values()]
 
-		# Generate probability intervals for each mutation operator
-		probs = [sum(realprobability[:i+1]) for i in range(len(realprobability))]
+			# Generate probability intervals for each mutation operator
+			probs = [sum(realprobability[:i+1]) for i in range(len(realprobability))]
 
-		# Roulette wheel
-		r = random.random()
-		for i, p in enumerate(probs):
-			if r <= p:
-				mutationtype = i
-				break
+			# Roulette wheel
+			r = random.random()
+			for i, p in enumerate(probs):
+				if r <= p:
+					mutationtype = i
+					break
 
-		operator = switcher.get(i,lambda :'Invalid')
-		return operator(parent)
+			operator = switcher.get(i,lambda :'Invalid')
+			return operator(parent)
+		else:
+			return parent
 
 	def __Mutation(self, parent):
 		# it consists of the variation of a randomly chosen bit, belonging
 		# to a randomly selected string.
 		child = []
-
 		# Mutation probability says how often will be parts of chromosome mutated.
 		# If there is no mutation, offspring is taken without any change.
 		for i in range(parent.Length):
@@ -415,36 +406,42 @@ class NichedParetoGeneticAlgorithm:
 				child.extend(newGeneAlternate if newGene == parent.Genes[i] else newGene)
 			else:
 				child.extend(parent.Genes[i])
-
-		return Chromosome(parent.Length, child, -1, "Mutation")
+		return Chromosome(parent.Length, child, -1)
 
 	def __Crossover(self, parentA, parentB):
 		# Two points on both parents' chromosomes is picked randomly, and
 		# designated 'crossover points'. This results in
 		# two offspring, each carrying some genetic information from both parents.
-		childA, childB = [], []
 
-		# The lengths of both the parent chromosomes are checked and the
-		# chromosome whose length is smaller is taken as parent A.
-		lenSmall = min(parentA.Length, parentB.Length)
-		if parentA.Length != lenSmall:
-			# Swap the two strings
-			parentA, parentB = parentB, parentA
+		# Crossover probability says how often will be crossover performed.
+		# If there is no crossover, offspring is exact copy of parents.
+		if FlipCoin(self.CROSSOVER_RATE):
+			childA, childB = [], []
 
-		# Crossover points are randomly chosen for parent A
-		startpoint, endpoint = random.sample(range(1, lenSmall + 1), 2)
-		startpoint, endpoint = min(startpoint, endpoint), max(startpoint, endpoint)
+			# The lengths of both the parent chromosomes are checked and the
+			# chromosome whose length is smaller is taken as parent A.
+			lenSmall = min(parentA.Length, parentB.Length)
+			if parentA.Length != lenSmall:
+				# Swap the two strings
+				parentA, parentB = parentB, parentA
 
-		childA.extend(parentB.Genes[0:startpoint])
-		childA.extend(parentA.Genes[startpoint:endpoint])
-		childA.extend(parentB.Genes[endpoint:])
+			# Crossover points are randomly chosen for parent A
+			startpoint, endpoint = random.sample(range(1, lenSmall + 1), 2)
+			startpoint, endpoint = min(startpoint, endpoint), max(startpoint, endpoint)
 
-		childB.extend(parentA.Genes[0:startpoint])
-		childB.extend(parentB.Genes[startpoint:endpoint])
-		childB.extend(parentA.Genes[endpoint:])
+			childA.extend(parentB.Genes[0:startpoint])
+			childA.extend(parentA.Genes[startpoint:endpoint])
+			childA.extend(parentB.Genes[endpoint:])
 
-		return	Chromosome(parentB.Length, childA, -1, "Crossover"), \
-				Chromosome(parentA.Length, childB, -1, "Crossover")
+			childB.extend(parentA.Genes[0:startpoint])
+			childB.extend(parentB.Genes[startpoint:endpoint])
+			childB.extend(parentA.Genes[endpoint:])
+
+			return	Chromosome(parentB.Length, childA, -1), \
+					Chromosome(parentA.Length, childB, -1)
+		else:
+			return parentA, parentB
+
 
 	def Evolution(self):
 		for _ in range(self.POPULATION_SIZE):
@@ -460,22 +457,14 @@ class NichedParetoGeneticAlgorithm:
 			# Operators
 			newpopulation = []
 			for parentA, parentB in self.__Selection():
-				# Crossover probability says how often will be crossover performed.
-				# If there is no crossover, offspring is exact copy of parents.
-				if FlipCoin(self.CROSSOVER_RATE):
-					childA, childB = self.CROSSOVER_FUNCTION(parentA, parentB)
-				else:
-					childA, childB = self.__Reproduction(parentA, parentB)
-
+				childA, childB = self.CROSSOVER_FUNCTION(parentA, parentB)
 				childA = self.MUTATION_FUNCTION(childA)
 				childB = self.MUTATION_FUNCTION(childB)
 
 				# Length Operator
 				if self.LENGTH_MUTATION_RATE != 0:
-					if FlipCoin(self.LENGTH_MUTATION_RATE):
-						childA = self.__LengthMutation(childA)
-					if FlipCoin(self.LENGTH_MUTATION_RATE):
-						childB = self.__LengthMutation(childB)
+					childA = self.__LengthMutation(childA)
+					childB = self.__LengthMutation(childB)
 
 				# Add to current population
 				newpopulation.append(childA)
