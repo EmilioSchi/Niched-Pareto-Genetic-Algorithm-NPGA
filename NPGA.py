@@ -48,15 +48,15 @@ def IsNonDominatedable(costs):
 	#  [ F1(X2), F2(X2), ... Fn(X2) ],
 	#  [ ...                        ],
 	#  [ F1(Xm), F2(Xm), ... Fn(Xm)]]
-	difference = np.zeros((costs.shape[0] - 1, costs.shape[1]), dtype = np.float64)
+	Difference = np.zeros((costs.shape[0] - 1, costs.shape[1]), dtype = np.float64)
 	NonDominatedable = np.ones(costs.shape[0], dtype = bool)
 	for k in range(costs.shape[0]):
 		j = 0
 		for i in range(costs.shape[0]):
 			if i != k:
-				difference[j, :] = costs[k,:] - costs[i, :]
+				Difference[j, :] = costs[k,:] - costs[i, :]
 				j = j + 1
-		NonDominatedable [k] = np.all(np.any(difference < 0, axis=1))
+		NonDominatedable [k] = np.all(np.any(Difference < 0, axis=1))
 	return NonDominatedable
 
 # Faster than IsNonDominatedable, but less readable.
@@ -144,15 +144,26 @@ class Chromosome:
 		self.Age		 = 0
 
 class NichedParetoGeneticAlgorithm:
-	def __init__(self, fitness, display, optimal_fitness, chromosome_set,
-	chromosome_length_set, population_size = 30, max_generation = 50,
+	def __init__(self, fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
+	chromosome_length_set, population_size = 30, max_generation = 100,
 	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
-	replace_mutation_rate = 0, growth_rate = 0.5, shrink_rate = 0.5,
-	prc_tournament_size = 0.1, candidate_size = 2, niche_radius = 1,
-	fastmode = False):
+	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
+	candidate_size = 2, niche_radius = 1, fastmode = False,
+	fnMutation = None, fnCrossover = None):
 		# Functions
-		self.OBJECTIVE_FUNCTION	 = fitness
-		self.DISPLAY_FUNCTION	 = display
+		self.OBJECTIVE_FUNCTION	 = fnGetFitness
+		self.DISPLAY_FUNCTION	 = fnDisplay
+
+		# Custom operators
+		if fnMutation is None:
+			self.MUTATION_FUNCTION = self.__Mutation
+		else:
+			self.MUTATION_FUNCTION = fnMutation
+
+		if fnCrossover is None:
+			self.CROSSOVER_FUNCTION = self.__Crossover
+		else:
+			self.CROSSOVER_FUNCTION = fnCrossover
 
 		# Parameter of classic Genetic Algorithm
 		self.CHROMOSOME_SET		 = chromosome_set
@@ -177,9 +188,6 @@ class NichedParetoGeneticAlgorithm:
 		self.MIN_LENGTH_SET			 = min(chromosome_length_set)
 		self.GROWTH_RATE			 = growth_rate
 		self.SHRINK_RATE			 = shrink_rate
-
-		# Other operator variables
-		self.REPLACE_MUTATION_RATE	 = replace_mutation_rate
 
 		# Pareto Niched Selection Tournament parameters
 		self.CANDIDATE_SIZE		 = candidate_size
@@ -293,18 +301,6 @@ class NichedParetoGeneticAlgorithm:
 		parentB.Strategy = "Reproduction"
 		return parentA, parentB
 
-	def __ReplaceMutation(self, parent):
-		# Replace a gene by another random one with parameters of the correct types.
-		child = []
-
-		gene, replaceGene = random.sample(self.CHROMOSOME_SET, 2)
-
-		for parentgene in parent.Genes:
-			child.extend(replaceGene if gene == parentgene else parentgene)
-
-		# assert(parent.Length == len(child))
-		return Chromosome(parent.Length, child, -1, "ReplaceMutation")
-
 	def __ShrinkMutation(self, parent):
 		# Erase genes.
 		child = []
@@ -312,10 +308,6 @@ class NichedParetoGeneticAlgorithm:
 		lengthset = [i for i in self.LENGTH_SET if i < parent.Length]
 		mutationLenght = random.sample(lengthset, 1)[0]
 		mutationquantity = parent.Length - mutationLenght
-
-#		mutationpoint = random.randint(mutationquantity, parent.Length - 1)
-#		child.extend(parent.Genes[0:mutationpoint - mutationquantity])
-#		child.extend(parent.Genes[mutationpoint:])
 
 		# It erases genes at the end
 		child.extend(parent.Genes[:-mutationquantity])
@@ -329,12 +321,6 @@ class NichedParetoGeneticAlgorithm:
 		mutationLenght = random.sample(lengthset, 1)[0]
 		mutationquantity = mutationLenght - parent.Length
 
-		# Insert random correct genes into a random position in the chromosome.
-#		mutationpoint = random.randint(0, parent.Length)
-#		child.extend(parent.Genes[0:mutationpoint])
-#		child.extend(random.choices(self.CHROMOSOME_SET, k = mutationquantity))
-#		child.extend(parent.Genes[mutationpoint:])
-
 		# Insert random correct genes at the end of chromosome.
 		child.extend(parent.Genes)
 		# It grows at the end
@@ -347,18 +333,20 @@ class NichedParetoGeneticAlgorithm:
 			0 : self.__GrowthMutation,
 			1 : self.__ShrinkMutation
 			}
-		probability = [self.GROWTH_RATE, self.SHRINK_RATE]
+
+		lengthprobability = {
+			'growthprobability' : self.GROWTH_RATE,
+			'shrinkprobability' : self.SHRINK_RATE
+			}
 
 		if self.MAX_LENGTH_SET == parent.Length:
-			#growthprobability
-			probability[0] = 0
+			lengthprobability['growthprobability'] = 0
 
 		if self.MIN_LENGTH_SET == parent.Length:
-			#shrinkprobability
-			probability[1] = 0
+			lengthprobability['shrinkprobability'] = 0
 
-		totalprobability = float(sum(probability))
-		realprobability = [p / totalprobability for p in probability]
+		totalprobability = sum(lengthprobability.values())
+		realprobability = [p / totalprobability for p in lengthprobability.values()]
 
 		# Generate probability intervals for each mutation operator
 		probs = [sum(realprobability[:i+1]) for i in range(len(realprobability))]
@@ -387,7 +375,6 @@ class NichedParetoGeneticAlgorithm:
 			else:
 				child.extend(parent.Genes[i])
 
-		# assert(parent.Length == len(child))
 		return Chromosome(parent.Length, child, -1, "Mutation")
 
 	def __Crossover(self, parentA, parentB):
@@ -401,24 +388,19 @@ class NichedParetoGeneticAlgorithm:
 		lenSmall = min(parentA.Length, parentB.Length)
 		if parentA.Length != lenSmall:
 			# Swap the two strings
-			tmp = parentA
-			parentA = parentB
-			parentB = tmp
+			parentA, parentB = parentB, parentA
 
 		# Crossover points are randomly chosen for parent A
-		crossoverpointstart, crossoverpointend = random.sample(range(1, lenSmall + 1), 2)
-		crossoverpointtmp1 = crossoverpointstart
-		crossoverpointtmp2 = crossoverpointend
-		crossoverpointstart	 = min(crossoverpointtmp1, crossoverpointtmp2)
-		crossoverpointend	 = max(crossoverpointtmp1, crossoverpointtmp2)
+		startpoint, endpoint = random.sample(range(1, lenSmall + 1), 2)
+		startpoint, endpoint = min(startpoint, endpoint), max(startpoint, endpoint)
 
-		childA.extend(parentB.Genes[0:crossoverpointstart])
-		childA.extend(parentA.Genes[crossoverpointstart:crossoverpointend])
-		childA.extend(parentB.Genes[crossoverpointend:])
+		childA.extend(parentB.Genes[0:startpoint])
+		childA.extend(parentA.Genes[startpoint:endpoint])
+		childA.extend(parentB.Genes[endpoint:])
 
-		childB.extend(parentA.Genes[0:crossoverpointstart])
-		childB.extend(parentB.Genes[crossoverpointstart:crossoverpointend])
-		childB.extend(parentA.Genes[crossoverpointend:])
+		childB.extend(parentA.Genes[0:startpoint])
+		childB.extend(parentB.Genes[startpoint:endpoint])
+		childB.extend(parentA.Genes[endpoint:])
 
 		assert(parentB.Length == len(childA))
 		assert(parentA.Length == len(childB))
@@ -442,28 +424,27 @@ class NichedParetoGeneticAlgorithm:
 				# Crossover probability says how often will be crossover performed.
 				# If there is no crossover, offspring is exact copy of parents.
 				if FlipCoin(self.CROSSOVER_RATE):
-					childA, childB = self.__Crossover(parentA, parentB)
+					childA, childB = self.CROSSOVER_FUNCTION(parentA, parentB)
 				else:
 					childA, childB = self.__Reproduction(parentA, parentB)
 
-				childA = self.__Mutation(childA)
-				childB = self.__Mutation(childB)
+				childA = self.MUTATION_FUNCTION(childA)
+				childB = self.MUTATION_FUNCTION(childB)
 
-				# Other Operator
-				if FlipCoin(self.LENGTH_MUTATION_RATE):
-					childA = self.__LengthMutation(childA)
-				if FlipCoin(self.LENGTH_MUTATION_RATE):
-					childB = self.__LengthMutation(childB)
+				# Length Operator
+				if self.LENGTH_MUTATION_RATE != 0:
+					if FlipCoin(self.LENGTH_MUTATION_RATE):
+						childA = self.__LengthMutation(childA)
+					if FlipCoin(self.LENGTH_MUTATION_RATE):
+						childB = self.__LengthMutation(childB)
 
-				if FlipCoin(self.REPLACE_MUTATION_RATE):
-					childA = self.__ReplaceMutation(childA)
-				if FlipCoin(self.REPLACE_MUTATION_RATE):
-					childB = self.__ReplaceMutation(childB)
+				# Other operators TODO
 
 				# Add to current population
 				newpopulation.append(childA)
 				newpopulation.append(childB)
 
+			# Replace Population
 			self.population = newpopulation
 
 		return chromosome, fitness
