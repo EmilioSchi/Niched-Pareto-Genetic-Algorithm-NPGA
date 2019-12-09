@@ -228,7 +228,6 @@ class NichedParetoGeneticAlgorithm:
 		nonDominatedable = [True] * self.CANDIDATE_SIZE
 		for e, i in enumerate(compareindexset[:self.CANDIDATE_SIZE]):
 			fitnesses = []
-			#fitness = np.asarray(self.population[i].Fitness)
 			fitnesses.append(self.population[i].Fitness)
 
 			for j in compareindexset[self.CANDIDATE_SIZE:]:
@@ -280,6 +279,7 @@ class NichedParetoGeneticAlgorithm:
 			parentA, dominated, candidateindexes = self.__ParetoDominationTournments()
 			if dominated:
 				parentA = self.__FitnessSharing(candidateindexes)
+
 			parentB, dominated, candidateindexes = self.__ParetoDominationTournments()
 			if dominated:
 				parentB = self.__FitnessSharing(candidateindexes)
@@ -340,10 +340,10 @@ class NichedParetoGeneticAlgorithm:
 			}
 
 		if self.MAX_LENGTH_SET == parent.Length:
-			lengthprobability['growthprobability'] = 0
+			return self.__ShrinkMutation(parent)
 
 		if self.MIN_LENGTH_SET == parent.Length:
-			lengthprobability['shrinkprobability'] = 0
+			return self.__GrowthMutation(parent)
 
 		totalprobability = sum(lengthprobability.values())
 		realprobability = [p / totalprobability for p in lengthprobability.values()]
@@ -402,8 +402,6 @@ class NichedParetoGeneticAlgorithm:
 		childB.extend(parentB.Genes[startpoint:endpoint])
 		childB.extend(parentA.Genes[endpoint:])
 
-		assert(parentB.Length == len(childA))
-		assert(parentA.Length == len(childB))
 		return	Chromosome(parentB.Length, childA, -1, "Crossover"), \
 				Chromosome(parentA.Length, childB, -1, "Crossover")
 
@@ -437,8 +435,6 @@ class NichedParetoGeneticAlgorithm:
 						childA = self.__LengthMutation(childA)
 					if FlipCoin(self.LENGTH_MUTATION_RATE):
 						childB = self.__LengthMutation(childB)
-
-				# Other operators TODO
 
 				# Add to current population
 				newpopulation.append(childA)
