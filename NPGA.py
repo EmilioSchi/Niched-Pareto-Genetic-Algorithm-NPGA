@@ -193,15 +193,17 @@ class NichedParetoGeneticAlgorithm:
 		self.T_DOM				 = math.floor(prc_tournament_size * self.POPULATION_SIZE)
 		self.NICHE_RADIUS		 = niche_radius
 
+		self.FASTMODE				 = fastmode
+		self.MULTITHREADMODE		 = multithreadmode
+		self.HISTORYRECOVERFITNESS	 = historyrecoverfitness
+
 		# Statistic parameters
 		self.Statistics = Statistics(self.NUMBER_OBJECTIVE, self.FASTMODE)
 
 		self.population = []
 		self.history = {'Genes' : [], 'Fitness' : []}
 
-		self.FASTMODE				 = fastmode
-		self.MULTITHREADMODE		 = multithreadmode
-		self.HISTORYRECOVERFITNESS	 = historyrecoverfitness
+
 
 	def __ThreadObjectiveFunction(self, genes, queue):
 		found = False
