@@ -138,8 +138,8 @@ class Statistics:
 
 class Chromosome:
 	def __init__(self, dimention, genes, fitness):
-		self.Length		 = dimention
 		self.Genes		 = genes
+		self.Length		 = dimention
 		self.Fitness	 = fitness
 
 class NichedParetoGeneticAlgorithm:
@@ -148,7 +148,7 @@ class NichedParetoGeneticAlgorithm:
 	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
 	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
 	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
-	fnMutation = None, fnCrossover = None):
+	fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
 		# Functions
 		self.OBJECTIVE_FUNCTION	 = fnGetFitness
 		self.DISPLAY_FUNCTION	 = fnDisplay
@@ -177,7 +177,6 @@ class NichedParetoGeneticAlgorithm:
 		# MultiObjective variables
 		self.OPTIMAL_FITNESS	 = np.asarray(optimal_fitness, dtype = np.float64)
 		self.NUMBER_OBJECTIVE	 = len(optimal_fitness)
-		self.FASTMODE			 = fastmode
 
 		# Variable length chromosome variable
 		if len(self.LENGTH_SET) == 1:
@@ -200,13 +199,20 @@ class NichedParetoGeneticAlgorithm:
 		self.population = []
 		self.history = {'Genes' : [], 'Fitness' : []}
 
-		self.MULTITHREADMODE = multithreadmode
+		self.FASTMODE				 = fastmode
+		self.MULTITHREADMODE		 = multithreadmode
+		self.HISTORYRECOVERFITNESS	 = historyrecoverfitness
 
 	def __ThreadObjectiveFunction(self, genes, queue):
-		if genes in self.history['Genes']:
-			index = self.history['Genes'].index(genes)
-			queue.put((genes, self.history['Fitness'][index]))
-		else:
+		found = False
+
+		if self.HISTORYRECOVERFITNESS:
+			if genes in self.history['Genes']:
+				index = self.history['Genes'].index(genes)
+				queue.put((genes, self.history['Fitness'][index]))
+				found = True
+
+		if not found:
 			fitness = self.OBJECTIVE_FUNCTION(genes)
 			queue.put((genes, fitness))
 
@@ -241,10 +247,15 @@ class NichedParetoGeneticAlgorithm:
 
 		else: # no multithreadmode
 			for chromosome in self.population:
-				if chromosome.Genes in self.history['Genes']:
-					index = self.history['Genes'].index(chromosome.Genes)
-					chromosome.Fitness = self.history['Fitness'][index]
-				else:
+				found = False
+
+				if self.HISTORYRECOVERFITNESS:
+					if chromosome.Genes in self.history['Genes']:
+						index = self.history['Genes'].index(chromosome.Genes)
+						chromosome.Fitness = self.history['Fitness'][index]
+						found = True
+
+				if not found:
 					# call objective_function
 					chromosome.Fitness = self.OBJECTIVE_FUNCTION(chromosome.Genes)
 					chromosome.Fitness = np.asarray(chromosome.Fitness, dtype = np.float64)
@@ -290,7 +301,7 @@ class NichedParetoGeneticAlgorithm:
 			return None, True, compareindexset[:self.CANDIDATE_SIZE]
 
 	def __FitnessSharing(self, candidateindexes):
-		distances = np.zeros((len(candidateindexes),), dtype = np.float64)
+		distances = np.zeros((self.CANDIDATE_SIZE,), dtype = np.float64)
 		for e, i in enumerate(candidateindexes):
 			distances[e] = self.__NichedCount(self.population[i])
 		# If we want to maintain useful diversity, it would be best to
