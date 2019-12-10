@@ -97,8 +97,8 @@ class Statistics:
 			self.best.append({'Genes': [], 'Value': 999999, 'Fitness' : []})
 
 		self.EuclideanBetter = {'Genes': [], 'Distance': 999999, 'Fitness' : []}
-		self.sum_fitness		 = [0] * self.NUMBER_OBJECTIVE
-		self.avg				 = [0] * self.NUMBER_OBJECTIVE
+		self.sum_fitness		 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+		self.avg				 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 		self.HistoryGenes		 = []
 		self.HistoryFitness		 = []
 		self.nonDominatedables	 = []
@@ -154,6 +154,7 @@ class NichedParetoGeneticAlgorithm:
 		self.DISPLAY_FUNCTION	 = fnDisplay
 
 		# Custom operators
+		# Method to do the mutation and crossover
 		if fnMutation is None:
 			self.MUTATION_FUNCTION = self.__Mutation
 		else:

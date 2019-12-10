@@ -4,24 +4,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def scaleMinMax(x, xmin, xmax, mindesired, maxdesired):
-	x = (x - xmin) / (xmax - xmin) * (maxdesired - mindesired) + mindesired
-	return x
+	return (x - xmin) / (xmax - xmin) * (maxdesired - mindesired) + mindesired
 
-def graycode(n):
-	# Return n-bit Gray code in a list
-	if n == 0:
-		return ['']
-	first_half = graycode(n - 1)
-	second_half = first_half.copy()
-	first_half = ['0' + code for code in first_half]
-	second_half = ['1' + code for code in reversed(second_half)]
-	return first_half + second_half
-
-class StaticCode:
-	g = []
-
-def graytodec(bits):
-	return int(StaticCode.g.index(''.join(bits)))
+def graytodec(bin_list):
+	"""
+	Convert from Gray coding to binary coding.
+	We assume big endian encoding.
+	"""
+	b = bin_list[0]
+	d = int(b) * (2**(len(bin_list)-1))
+	for i, e in enumerate(range(len(bin_list) - 2, -1, -1)):
+		b = str(int(b != bin_list[i + 1]))
+		d += int(b) * (2**e)
+	return d
 
 def decodechromosome(bits):
 	dec = graytodec(bits)
@@ -87,8 +82,7 @@ def getfitness(candidate):
 
 def test():
 	geneset = '01'
-	genelen = [20]
-	StaticCode.g = graycode(20)
+	genelen = [64]
 
 	def fnDisplay(candidate, statistic): display(candidate, statistic)
 	def fnGetFitness(genes): return getfitness(genes)
