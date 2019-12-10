@@ -266,13 +266,12 @@ class NichedParetoGeneticAlgorithm:
 		# in the comparison set.
 		nonDominatedable = np.ones((self.CANDIDATE_SIZE,), dtype=bool)
 		for e, i in enumerate(compareindexset[:self.CANDIDATE_SIZE]):
-			fitnesses = []
-			fitnesses.append(self.population[i].Fitness)
+			costs = np.zeros((1 + self.T_DOM, self.NUMBER_OBJECTIVE), dtype = np.float64)
+			costs[0] = self.population[i].Fitness
 
-			for j in compareindexset[self.CANDIDATE_SIZE:]:
-				fitnesses.append(self.population[j].Fitness)
+			for z, j in enumerate(compareindexset[self.CANDIDATE_SIZE:]):
+				costs[z + 1] = self.population[j].Fitness
 
-			costs = np.asarray(fitnesses, dtype = np.float64)
 			# I want to know if first add fitness is nonDominatedable
 			if self.FASTMODE:
 				nonDominatedable[e] = IsNonDominatedableFast(costs)[0]
@@ -291,12 +290,13 @@ class NichedParetoGeneticAlgorithm:
 			return None, True, compareindexset[:self.CANDIDATE_SIZE]
 
 	def __FitnessSharing(self, candidateindexes):
-		distances = []
-		for i in candidateindexes:
-			distances.append(self.__NichedCount(self.population[i]))
-			# If we want to maintain useful diversity, it would be best to
-			# choose the candidate that has the smaller niche count.
-			candidateindex = candidateindexes[distances.index(min(distances))]
+		distances = np.zeros((len(candidateindexes),), dtype = np.float64)
+		for e, i in enumerate(candidateindexes):
+			distances[e] = self.__NichedCount(self.population[i])
+		# If we want to maintain useful diversity, it would be best to
+		# choose the candidate that has the smaller niche count.
+		itemindex = np.where(distances == distances.min())[0][0]
+		candidateindex = candidateindexes[itemindex]
 		return self.population[candidateindex]
 
 	def __NichedCount(self, cadidate):
