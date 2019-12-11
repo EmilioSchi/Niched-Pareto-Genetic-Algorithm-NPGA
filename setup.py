@@ -14,6 +14,7 @@ setup(
 	url = 'https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA',
 	name = 'NPGA',
 	version = __version__,
+	packages=['NPGA'],
 	install_requires=['numpy'],
 	classifiers=("Programming Language :: Python :: 3"),
 )
