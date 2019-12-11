@@ -1,4 +1,5 @@
 from setuptools import setup
+from NPGA import __version__
 
 setup(
 	author = 'Emilio Schinina',
@@ -12,7 +13,7 @@ setup(
 	license = 'Apache',
 	url = 'https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA',
 	name = 'NPGA',
-	version = '0.2.1',
+	version = __version__,
 	install_requires=['numpy'],
 	classifiers=("Programming Language :: Python :: 3"),
 )
