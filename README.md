@@ -16,45 +16,43 @@ pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-N
 ```
 
 ## Quick start
------------
 
 ### Importing
 
 ```python
-	import NPGA
+import NPGA
 ```
 ### Define Fitness calculation function
 ```python
-	def getfitness(candidate):
-		x = decode_chromosome_function(candidate)
-		return [f1(x), f2(x), f3(x), ..., fn(x)]
+def getfitness(candidate):
+	x = decode_chromosome_function(candidate)
+	return [f1(x), f2(x), f3(x), ..., fn(x)]
 
-	def fnGetFitness(genes): return getfitness(genes)
+def fnGetFitness(genes): return getfitness(genes)
 ```
 
 ### Define display function over generation
 
 ```python
-	def display(candidates, statistics):
-		...
+def display(candidates, statistics):
+	...
 
-	def fnDisplay(candidate, statistic): display(candidate, statistic)
+def fnDisplay(candidate, statistic): display(candidate, statistic)
 ```
 
 ### Set parameters
 ```python
-	geneset = '01'
-	genelen = [64]
-	optimalFitness = [0, 0]
-	
-	GA = NPGA.NichedParetoGeneticAlgorithm(
-		fnGetFitness, fnDisplay, optimalFitness,
-		geneset, genelen, population_size = 20,
-		max_generation = 30, crossover_rate = 0.7,
-		mutation_rate = 0.05, niche_radius = 0.2,
-		candidate_size = 2, prc_tournament_size = 0.2)
+geneset = '01'
+genelen = [64]
+optimalFitness = [0, 0]
+GA = NPGA.NichedParetoGeneticAlgorithm(
+	fnGetFitness, fnDisplay, optimalFitness,
+	geneset, genelen, population_size = 20,
+	max_generation = 30, crossover_rate = 0.7,
+	mutation_rate = 0.05, niche_radius = 0.2,
+	candidate_size = 2, prc_tournament_size = 0.2)
 ```
 ### Run
 ```python
-	best, fitness = GA.Evolution()
+best, fitness = GA.Evolution()
 ```
