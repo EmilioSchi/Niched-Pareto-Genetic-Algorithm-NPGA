@@ -1,4 +1,4 @@
-<p><img align="left" height="90" src="img/logo.png">
+<p><img align="left" height="100" src="img/logo.png">
 <b><font size="20">Niched Pareto Genetic Algorithm</font></b></p>
 
 Genetic Algorithm (GA) for a  Multi-objective Optimization Problem (MOP)
