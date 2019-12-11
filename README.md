@@ -15,47 +15,46 @@ When NumPy has been installed, NPGA can be installed using pip as follows:
 pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
 
-Quick start
+## Quick start
 -----------
 
-Importing
-````````````
-.. code-block:: python
+### Importing
 
+```python
 	import NPGA
-
-Define Fitness calculation function
-````````````````````
-.. code-block:: python
-
+```
+### Define Fitness calculation function
+```python
 	def getfitness(candidate):
 		x = decode_chromosome_function(candidate)
 		return [f1(x), f2(x), f3(x), ..., fn(x)]
 
 	def fnGetFitness(genes): return getfitness(genes)
+```
 
-Define display function over generation
-````````````````````
+### Define display function over generation
 
-.. code-block:: python
+```python
 	def display(candidates, statistics):
 		...
 
 	def fnDisplay(candidate, statistic): display(candidate, statistic)
+```
 
-Set parameters
-````````````````````
-.. code-block:: python
-
+### Set parameters
+```python
+	geneset = '01'
+	genelen = [64]
+	optimalFitness = [0, 0]
+	
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 		fnGetFitness, fnDisplay, optimalFitness,
 		geneset, genelen, population_size = 20,
 		max_generation = 30, crossover_rate = 0.7,
 		mutation_rate = 0.05, niche_radius = 0.2,
 		candidate_size = 2, prc_tournament_size = 0.2)
-
-Run
-````````````````````
-.. code-block:: python
-
+```
+### Run
+```python
 	best, fitness = GA.Evolution()
+```
