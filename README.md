@@ -1,7 +1,7 @@
+<img height="100" src="img/logo.png">
+
 # Niched-Pareto-Genetic-Algorithm-NPGA
 Genetic Algorithm (GA) for a  Multi-objective Optimization Problem (MOP)
-
-<img src="img/logo.png">
 
 Introduction
 ------------
@@ -9,15 +9,12 @@ To maintain multiple Pareto optimal solutions, Horn et all [1] have altered tour
 
 [1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolu-tionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994
 
-Installation
-------------
+### Installation
 When NumPy has been installed, NPGA can be installed using pip as follows:
 
 ```bash
 pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
-
-## Quick start
 
 ### Importing
 
