@@ -63,8 +63,8 @@ best, fitness = GA.Evolution()
 
 ## Reference
 
-[1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolu-tionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994
+[1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolutionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994
 
-[2] N. Nafploitis J. Horn.  Multiobjective optimization using the niche pareto ge-netic algorithm.IlliGAL Report No.93005. Illinois Genetic Algorithm Laboratory.University of Illinois at Urbana-Champaign,1993.
+[2] N. Nafploitis J. Horn.  Multiobjective optimization using the niche pareto genetic algorithm.IlliGAL Report No.93005. Illinois Genetic Algorithm Laboratory.University of Illinois at Urbana-Champaign,1993.
 
 [3] J.Richardson D.E.Goldberg.   Genetic algorithms with sharing for multimodalfunction  optimization.In:  Proceedings  of  the  second  international  conference  ongenetic algorithms, Lawrence Erlbaum Associates, Hillsdale, NJ, pages41–49,1987.
