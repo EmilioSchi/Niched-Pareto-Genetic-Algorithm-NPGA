@@ -33,21 +33,26 @@ import NPGA
 NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set, chromosome_length_set, population_size = 30, max_generation = 100, crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0, growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1, candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False, fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
 ```
 #### Arguments
+- **fnGetFitness**: the fitness function to evaluate the solution domain.
+- **fnDisplay**:
+- **optimal_fitness**:
+- **chromosome_set**: 
+- **chromosome_length_set**: List of sizes that the chromosome can be assumed.
 - **population_size**:
 - **max_generation**:
-- **crossover_rate**:
-- **mutation_rate**:
-- **length_mutation_rate**:
-- **growth_rate**:
-- **shrink_rate**:
+- **crossover_rate**: Crossover probability says how often will be crossover performed. If there is a crossover, offspring is made from parts of parents' chromosome, otherwise, if there is no crossover, offspring is exact copy of parents. Crossover is made in hope that new chromosomes will have good parts of old chromosomes and maybe the new chromosomes will be better.
+- **mutation_rate**: Mutation probability says how often will be parts of chromosome mutated. If mutation is performed, part of chromosome is changed. Mutation is made to prevent falling GA into local extreme, but it should not occur very often, because then GA will in fact change to random search.
+- **length_mutation_rate**: Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
+- **growth_rate**: In growth mutation the chromosome is enlarged.
+- **shrink_rate**: The purpose of shrink mutation is to reduce the length of the chromosome.
 - **prc_tournament_size**:
 - **candidate_size**:
 - **niche_radius**:
 - **fastmode**:
 - **multithreadmode**:
 - **historyrecoverfitness**:
-- **fnMutation**:
-- **fnCrossover**:
+- **fnMutation**: It is possible to declare custom Mutation function
+- **fnCrossover**: It is possible to declare custom Crossover function
 
 ## Usage
 
