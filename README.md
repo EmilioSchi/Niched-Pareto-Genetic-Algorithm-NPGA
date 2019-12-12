@@ -33,10 +33,10 @@ import NPGA
 NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set, chromosome_length_set, population_size = 30, max_generation = 100, crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0, growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1, candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False, fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
 ```
 #### Arguments
-- **fnGetFitness**: the fitness function to evaluate the solution domain.
+- **fnGetFitness**: The fitness function to evaluate the solution domain.
 - **fnDisplay**:
 - **optimal_fitness**: The solution that wants to be reached.
-- **chromosome_set**: String. A set of character used in chromosome.
+- **chromosome_set**: String. A set of characters used in chromosome.
 - **chromosome_length_set**: List of sizes that the chromosome can be assumed.
 - **population_size**: Integer.
 - **max_generation**: Integer. A maximum number of generation.
@@ -45,7 +45,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 - **length_mutation_rate**: Float between 0 and 1. Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
 - **growth_rate**: In growth mutation the chromosome is enlarged.
 - **shrink_rate**: The purpose of shrink mutation is to reduce the length of the chromosome.
-- **prc_tournament_size**: Float between 0 and 1. The percentage of a comparison set in tournament selection
+- **prc_tournament_size**: Float between 0 and 1. The percentage of population that will form a comparison set in tournament selection.
 - **candidate_size**: The number of candidate chromosomes that can be select as parents.
 - **niche_radius**: Float. Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. The concept of Niche was introduced to ensure the diversity of individuals and prevent individuals converging into a narrow region of solution space, the range of niche is a spherical area. It is fixed by the user at some estimate of the minimal separation expected between the goal solutions.  
 - **fastmode**: Boolean.
