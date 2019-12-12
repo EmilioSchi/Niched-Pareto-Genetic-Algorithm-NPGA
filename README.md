@@ -21,7 +21,7 @@ When NumPy has been installed, NPGA can be installed using pip as follows:
 ```bash
  pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
-And later you can import with in your code:
+And later it is possible to import in code with:
 ```python
 import NPGA
 ```
@@ -36,7 +36,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 - **fnGetFitness**: the fitness function to evaluate the solution domain.
 - **fnDisplay**:
 - **optimal_fitness**:
-- **chromosome_set**: 
+- **chromosome_set**:
 - **chromosome_length_set**: List of sizes that the chromosome can be assumed.
 - **population_size**:
 - **max_generation**:
@@ -45,14 +45,14 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 - **length_mutation_rate**: Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
 - **growth_rate**: In growth mutation the chromosome is enlarged.
 - **shrink_rate**: The purpose of shrink mutation is to reduce the length of the chromosome.
-- **prc_tournament_size**:
-- **candidate_size**:
+- **prc_tournament_size**: The percentage of a comparison set in tournament selection
+- **candidate_size**: The number of candidate chromosomes that can be select as parents.
 - **niche_radius**:
 - **fastmode**:
 - **multithreadmode**:
 - **historyrecoverfitness**:
-- **fnMutation**: It is possible to declare custom Mutation function
-- **fnCrossover**: It is possible to declare custom Crossover function
+- **fnMutation**: It is possible to declare a custom Mutation function
+- **fnCrossover**: It is possible to declare a custom Crossover function
 
 ## Usage
 
