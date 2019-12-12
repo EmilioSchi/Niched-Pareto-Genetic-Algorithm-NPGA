@@ -27,10 +27,10 @@ def decodechromosome(bits):
 class StaticGen:
 	Generation = 1
 
-def display(candidates, statistics):
+def display(statistics):
 	xpop = []
 	ypop = []
-	for candidate in candidates:
+	for candidate in statistics.population:
 		xpop.append(decodechromosome(candidate.Genes))
 		ypop.append(candidate.Fitness)
 
@@ -74,7 +74,7 @@ def display(candidates, statistics):
 
 
 def F1(x):
-	return math.sin(x)
+	return x * 0.04 + math.sin(x)
 
 def F2(x):
 	return 0.01 * (x - 2) * (x - 2) + 0.7
@@ -84,16 +84,16 @@ def F3(x):
 
 def getfitness(candidate):
 	x = decodechromosome(candidate)
-	return [F1(x), F2(x), F3(x)]
+	return [[F1(x), 'maximize'], [F2(x), 'minimize'], [F3(x), 'minimize']]
 
 def test():
 	geneset = '01'
 	genelen = [128]
 
-	def fnDisplay(candidate, statistic): display(candidate, statistic)
+	def fnDisplay(statistic): display(statistic)
 	def fnGetFitness(genes): return getfitness(genes)
 
-	optimalFitness = [-1, -0.5, 0]
+	optimalFitness = [1, 0.701, 0.51]
 
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
@@ -106,5 +106,7 @@ def test():
 
 	return best, decodechromosome(best)
 
-print(test())
+a, b = test()
+print(a)
+print(b)
 plt.show()

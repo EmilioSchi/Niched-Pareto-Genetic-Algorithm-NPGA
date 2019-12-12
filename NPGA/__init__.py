@@ -1,4 +1,4 @@
-__version__ = '0.2.5'
+__version__ = '0.2.6'
 
 # -*- coding: utf-8 -*-
 #
@@ -87,10 +87,12 @@ def IsNonDominatedableFast(costs, return_mask = True):
 		return NonDominatedable
 
 class Statistics:
-	def __init__(self, number_objective, fastmode):
-		self.NUMBER_OBJECTIVE	 = number_objective
+	def __init__(self, optimal_fitness, fastmode):
+		self.NUMBER_OBJECTIVE	 = len(optimal_fitness)
 		self.FASTMODE			 = fastmode
+		self.COMPARE_FITNESS	 = optimal_fitness
 		self.number_combination	 = 0
+		self.population 		 = []
 		self.population_size	 = 0
 		# BUG OF PYTHON3 (SAME ADDRESS POINTER ASSIGNMENT)
 		#self.BEST = [{'Genes': [], 'Value': 999999, 'Fitness' : []}] * self.NUMBER_OBJECTIVE
@@ -107,16 +109,22 @@ class Statistics:
 
 	def Update(self, population, history):
 		self.number_combination = len(history['Genes'])
-		self.sum_fitness = [0] * self.NUMBER_OBJECTIVE
+		self.sum_fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+		self.population = population
 		self.population_size = 0
 		for individual in population:
 
-			if self.EuclideanBetter['Distance'] > np.sum(individual.Fitness):
-				self.EuclideanBetter['Distance'] = np.sum(individual.Fitness)
+			if self.FASTMODE:
+				distance = EuclideanDistanceFast(self.COMPARE_FITNESS, individual.Fitness)
+			else:
+				distance = EuclideanDistance(self.COMPARE_FITNESS, individual.Fitness)
+
+			if self.EuclideanBetter['Distance'] > distance:
+				self.EuclideanBetter['Distance'] = distance
 				self.EuclideanBetter['Genes'] = ''.join(individual.Genes)
 				self.EuclideanBetter['Fitness'] = individual.Fitness
 
-			for i, fitness in enumerate(individual.Fitness):
+			for i, fitness in enumerate(individual.FitnessToMinimise):
 				self.sum_fitness[i] = self.sum_fitness[i] + fitness
 
 				if self.best[i]['Value'] > fitness:
@@ -130,7 +138,7 @@ class Statistics:
 			self.avg[i] = sum / self.population_size
 
 		self.HistoryGenes = history['Genes']
-		self.HistoryFitness = np.asarray(history['Fitness'], dtype = np.float64)
+		self.HistoryFitness = np.asarray(history['FitnessToMinimise'], dtype = np.float64)
 		# I want to know if first add fitness is nonDominatedable
 		if self.FASTMODE:
 			self.nonDominatedable = IsNonDominatedableFast(self.HistoryFitness)
@@ -139,10 +147,12 @@ class Statistics:
 		return self.EuclideanBetter['Genes'], self.EuclideanBetter['Fitness']
 
 class Chromosome:
-	def __init__(self, dimention, genes, fitness):
-		self.Genes		 = genes
-		self.Length		 = dimention
-		self.Fitness	 = fitness
+	def __init__(self, genes, dimention, fitness, fitnessToMinimise):
+		self.Genes			 = genes
+		self.Length			 = dimention
+		self.Fitness		 = fitness
+		# maximization problem is the negation of minimazion problem
+		self.FitnessToMinimise  = fitnessToMinimise
 
 class NichedParetoGeneticAlgorithm:
 	def __init__(self, fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
@@ -151,6 +161,15 @@ class NichedParetoGeneticAlgorithm:
 	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
 	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
 	fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
+
+		assert(crossover_rate >= 0 and crossover_rate <= 1), "Crossover Rate can take values between 0 and 1."
+		assert(mutation_rate >= 0 and mutation_rate <= 1), "Mutation Rate can take values between 0 and 1."
+		assert(length_mutation_rate >= 0 and length_mutation_rate <= 1), "Length Mutation Rate can take values between 0 and 1."
+		assert(prc_tournament_size >= 0 and prc_tournament_size <= 1), "The percentage of tournament size can take values between 0 and 1."
+		assert(population_size >= 4), "Population size is very small."
+		assert(candidate_size >= 2), "Candidate can be at least 2."
+		assert(max_generation >= 1), "Generation can be positive."
+
 		# Functions
 		self.OBJECTIVE_FUNCTION	 = fnGetFitness
 		self.DISPLAY_FUNCTION	 = fnDisplay
@@ -191,86 +210,131 @@ class NichedParetoGeneticAlgorithm:
 		self.SHRINK_RATE			 = shrink_rate
 
 		# Pareto Niched Selection Tournament parameters
-		self.CANDIDATE_SIZE		 = candidate_size
-		self.T_DOM				 = math.floor(prc_tournament_size * self.POPULATION_SIZE)
-		self.NICHE_RADIUS		 = niche_radius
+		self.CANDIDATE_SIZE			 = candidate_size
+		self.T_DOM					 = math.floor(prc_tournament_size * self.POPULATION_SIZE)
+		self.NICHE_RADIUS			 = niche_radius
 
 		self.FASTMODE				 = fastmode
 		self.MULTITHREADMODE		 = multithreadmode
 		self.HISTORYRECOVERFITNESS	 = historyrecoverfitness
 
 		# Statistic parameters
-		self.Statistics = Statistics(self.NUMBER_OBJECTIVE, self.FASTMODE)
+		self.Statistics = Statistics(self.OPTIMAL_FITNESS, self.FASTMODE)
 
 		self.population = []
-		self.history = {'Genes' : [], 'Fitness' : []}
+		self.history = {'Genes' : [], 'Fitness' : [], 'FitnessToMinimise' : [], 'ProblemType' : []}
 
-
+	def __AlreadySeen(self, genes):
+		if self.HISTORYRECOVERFITNESS and (genes in self.history['Genes']):
+			itemindex = self.history['Genes'].index(genes)
+			return itemindex, True
+		else:
+			return 0, False
 
 	def __ThreadObjectiveFunction(self, genes, queue):
-		found = False
+		itemindex, historyfound = self.__AlreadySeen(genes)
+		if historyfound:
+			queue.put((genes, self.history['Fitness'][itemindex], self.history['ProblemType'][itemindex], historyfound))
+		else:
+			# call objective_function
+			fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+			problemtypes = []
+			for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(genes)):
+				fitness[i] = singlefitness
+				problemtypes.append(problemtype)
+			queue.put((genes, fitness, problemtypes, historyfound))
 
-		if self.HISTORYRECOVERFITNESS:
-			if genes in self.history['Genes']:
-				index = self.history['Genes'].index(genes)
-				queue.put((genes, self.history['Fitness'][index]))
-				found = True
+	def __CheckSolution(self, values, problemtypes):
+		result = True
+		for i, (value, problemtype) in enumerate(zip(values, problemtypes)):
+			if problemtype == 'minimize':
+				result = result and (value <= self.OPTIMAL_FITNESS[i])
+			elif problemtype == 'maximize':
+				result = result and (value >= self.OPTIMAL_FITNESS[i])
+		return result
 
-		if not found:
-			fitness = self.OBJECTIVE_FUNCTION(genes)
-			queue.put((genes, fitness))
+	def __ConvertMaximizeToMinimize(self, values, problemtypes):
+		fitnessToMinimise = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+		# I want to convert all functions which are to
+		# be minimized into a form which allows their
+		# maximization.
+		for i, (fitness, problemtype) in enumerate(zip(values, problemtypes)):
+			if problemtype == 'minimize':
+				fitnessToMinimise[i] = fitness
+			# Maximization problem is the negation of Minimazion problem
+			elif problemtype == 'maximize':
+				fitnessToMinimise[i] = -fitness
+			else:
+				assert(False), "Problem type can be minimize or maximize."
+		return fitnessToMinimise
+
+	def __MultiThreadEvaluate(self):
+		threads = []
+		tmp = []
+		queued_request = queue.Queue()
+
+		for chromosome in self.population:
+			# call objective_function
+			process = threading.Thread(
+						target = self.__ThreadObjectiveFunction,
+						args=(chromosome.Genes, queued_request,)
+						)
+			process.start()
+			threads.append(process)
+
+		for process in threads:
+			process.join()
+
+		for _ in range(queued_request.qsize()):
+			genes, fitness, problemtypes, historyfound = queued_request.get()
+			fitnessToMinimise = self.__ConvertMaximizeToMinimize(fitness, problemtypes)
+			tmp.append(Chromosome(genes, len(genes), fitness, fitnessToMinimise))
+			# Store chromosome in already seen list
+			if self.HISTORYRECOVERFITNESS and not historyfound:
+				self.history['Genes'].append(genes)
+				self.history['Fitness'].append(fitness)
+				self.history['FitnessToMinimise'].append(fitnessToMinimise)
+				self.history['ProblemType'].append(problemtypes)
+
+			solutionfound = self.__CheckSolution(fitness, problemtypes)
+
+		self.population = tmp
+
+		BetterGenes, Betterfitness = self.Statistics.Update(self.population, self.history)
+		self.DISPLAY_FUNCTION(self.Statistics)
+
+		return BetterGenes, Betterfitness, solutionfound
 
 	def __Evaluate(self):
 		if self.MULTITHREADMODE:
-			threads = []
-			tmp = []
-			queued_request = queue.Queue()
+			return self.__MultiThreadEvaluate()
 
-			for chromosome in self.population:
+		for chromosome in self.population:
+			itemindex, historyfound = self.__AlreadySeen(chromosome.Genes)
+			if historyfound:
+				chromosome.Fitness = self.history['Fitness'][itemindex]
+				chromosome.FitnessToMinimise = self.history['FitnessToMinimise'][itemindex]
+			else:
 				# call objective_function
-				process = threading.Thread(
-							target = self.__ThreadObjectiveFunction,
-							args=(chromosome.Genes, queued_request,)
-							)
-				process.start()
-				threads.append(process)
+				chromosome.Fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+				chromosome.FitnessToMinimise = []
+				problemtypes = []
+				for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(chromosome.Genes)):
+					chromosome.Fitness[i] = singlefitness
+					problemtypes.append(problemtype)
+					fitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
 
-			for process in threads:
-				process.join()
+				# Store chromosome in already seen list
+				self.history['Genes'].append(chromosome.Genes)
+				self.history['Fitness'].append(chromosome.Fitness)
+				self.history['FitnessToMinimise'].append(chromosome.FitnessToMinimise)
+				self.history['ProblemType'].append(problemtypes)
 
-			for _ in range(queued_request.qsize()):
-				genes, fitness = queued_request.get()
-				fitness = np.asarray(fitness, dtype = np.float64)
-				tmp.append(Chromosome(len(genes), genes, fitness))
-				self.history['Genes'].append(genes)
-				self.history['Fitness'].append(fitness)
-				if np.all(fitness <= self.OPTIMAL_FITNESS):
-					return ''.join(genes), fitness, True
-
-			self.population = tmp
-
-		else: # no multithreadmode
-			for chromosome in self.population:
-				found = False
-
-				if self.HISTORYRECOVERFITNESS:
-					if chromosome.Genes in self.history['Genes']:
-						index = self.history['Genes'].index(chromosome.Genes)
-						chromosome.Fitness = self.history['Fitness'][index]
-						found = True
-
-				if not found:
-					# call objective_function
-					chromosome.Fitness = self.OBJECTIVE_FUNCTION(chromosome.Genes)
-					chromosome.Fitness = np.asarray(chromosome.Fitness, dtype = np.float64)
-					self.history['Genes'].append(chromosome.Genes)
-					self.history['Fitness'].append(chromosome.Fitness)
-					if np.all(chromosome.Fitness <= self.OPTIMAL_FITNESS):
-						return ''.join(chromosome.Genes), chromosome.Fitness, True
+				solutionfound = self.__CheckSolution(chromosome.Fitness, problemtypes)
 
 		EDGenes, EDfitness = self.Statistics.Update(self.population, self.history)
-		self.DISPLAY_FUNCTION(self.population, self.Statistics)
-		return EDGenes, EDfitness, False
+		self.DISPLAY_FUNCTION(self.Statistics)
+		return EDGenes, EDfitness, solutionfound
 
 	def __ParetoDominationTournments(self):
 		# Few candidate chromosomes and a comparison set, of size T_DOM, of
@@ -282,10 +346,10 @@ class NichedParetoGeneticAlgorithm:
 		nonDominatedable = np.ones((self.CANDIDATE_SIZE,), dtype=bool)
 		for e, i in enumerate(compareindexset[:self.CANDIDATE_SIZE]):
 			costs = np.zeros((1 + self.T_DOM, self.NUMBER_OBJECTIVE), dtype = np.float64)
-			costs[0] = self.population[i].Fitness
+			costs[0] = self.population[i].FitnessToMinimise
 
 			for z, j in enumerate(compareindexset[self.CANDIDATE_SIZE:]):
-				costs[z + 1] = self.population[j].Fitness
+				costs[z + 1] = self.population[j].FitnessToMinimise
 
 			# I want to know if first add fitness is nonDominatedable
 			if self.FASTMODE:
@@ -345,7 +409,7 @@ class NichedParetoGeneticAlgorithm:
 		# It generates random string
 		genlen = random.choices(self.LENGTH_SET, k = 1)[0]
 		child = random.choices(self.CHROMOSOME_SET, k = genlen)
-		return Chromosome(genlen, child, -1)
+		return Chromosome(child, genlen, -1, -1)
 
 	def __ShrinkMutation(self, parent):
 		# Erase genes.
@@ -358,7 +422,7 @@ class NichedParetoGeneticAlgorithm:
 		# It erases genes at the end
 		child.extend(parent.Genes[:-mutationquantity])
 
-		return Chromosome(parent.Length - mutationquantity, child, -1)
+		return Chromosome(child, parent.Length - mutationquantity, -1, -1)
 
 	def __GrowthMutation(self, parent):
 		child = []
@@ -372,7 +436,7 @@ class NichedParetoGeneticAlgorithm:
 		# It grows at the end
 		child.extend(random.choices(self.CHROMOSOME_SET, k = mutationquantity))
 
-		return Chromosome(parent.Length + mutationquantity, child, -1)
+		return Chromosome(child, parent.Length + mutationquantity, -1, -1)
 
 	def __LengthMutation(self, parent):
 		if FlipCoin(self.LENGTH_MUTATION_RATE):
@@ -422,7 +486,7 @@ class NichedParetoGeneticAlgorithm:
 				child.extend(newGeneAlternate if newGene == parent.Genes[i] else newGene)
 			else:
 				child.extend(parent.Genes[i])
-		return Chromosome(parent.Length, child, -1)
+		return Chromosome(child, parent.Length, -1, -1)
 
 	def __Crossover(self, parentA, parentB):
 		# Two points on both parents' chromosomes is picked randomly, and
@@ -453,8 +517,8 @@ class NichedParetoGeneticAlgorithm:
 			childB.extend(parentB.Genes[startpoint:endpoint])
 			childB.extend(parentA.Genes[endpoint:])
 
-			return	Chromosome(parentB.Length, childA, -1), \
-					Chromosome(parentA.Length, childB, -1)
+			return	Chromosome(childA, parentB.Length, -1, -1), \
+					Chromosome(childB, parentA.Length, -1, -1)
 		else:
 			return parentA, parentB
 

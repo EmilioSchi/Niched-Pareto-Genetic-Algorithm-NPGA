@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def scaleMinMax(x, xmin, xmax, mindesired, maxdesired):
-	return (x - xmin) / (xmax - xmin) * (maxdesired - mindesired) + mindesired
+	return ((x - xmin) / (xmax - xmin) * (maxdesired - mindesired) + mindesired)
 
 def graytodec(bin_list):
 	"""
@@ -27,10 +27,10 @@ def decodechromosome(bits):
 class StaticGen:
 	Generation = 1
 
-def display(candidates, statistics):
+def display(statistics):
 	xpop = []
 	ypop = []
-	for candidate in candidates:
+	for candidate in statistics.population:
 		xpop.append(decodechromosome(candidate.Genes))
 		ypop.append(candidate.Fitness)
 
@@ -61,7 +61,7 @@ def display(candidates, statistics):
 	plt.text(4.6, 13, 'f22()')
 	plt.grid()
 	plt.draw()
-	plt.pause(0.4)
+	plt.pause(0.1)
 	plt.show(block=False)
 
 	print(statistics.EuclideanBetter['Genes'], end='\t')
@@ -78,26 +78,28 @@ def f22(x):
 
 def getfitness(candidate):
 	x = decodechromosome(candidate)
-	return [f21(x), f22(x)]
+	return [[f21(x), 'minimize'], [f22(x), 'minimize']]
 
 def test():
 	geneset = '01'
-	genelen = [64]
+	genelen = [128]
 
-	def fnDisplay(candidate, statistic): display(candidate, statistic)
+	def fnDisplay(statistics): display(statistics)
 	def fnGetFitness(genes): return getfitness(genes)
 
 	optimalFitness = [0, 0]
 
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
-							geneset, genelen, population_size = 20,
-							max_generation = 30, crossover_rate = 0.7,
-							mutation_rate = 0.05, niche_radius = 0.2,
-							candidate_size = 2, prc_tournament_size = 0.2)
+							geneset, genelen, population_size = 30,
+							max_generation = 100, crossover_rate = 0.65,
+							mutation_rate = 1/128, niche_radius = 0.08,
+							candidate_size = 2, prc_tournament_size = 0.2,
+							fastmode = True, multithreadmode = True)
 	best, fitness = GA.Evolution()
 
-	return best
+
+	return best, decodechromosome(best)
 
 print(test())
 plt.show()
