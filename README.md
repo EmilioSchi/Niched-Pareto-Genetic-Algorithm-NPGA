@@ -35,22 +35,22 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 #### Arguments
 - **fnGetFitness**: the fitness function to evaluate the solution domain.
 - **fnDisplay**:
-- **optimal_fitness**:
-- **chromosome_set**:
+- **optimal_fitness**: The solution that wants to be reached.
+- **chromosome_set**: String. A set of character used in chromosome.
 - **chromosome_length_set**: List of sizes that the chromosome can be assumed.
-- **population_size**:
-- **max_generation**:
-- **crossover_rate**: Crossover probability says how often will be crossover performed. If there is a crossover, offspring is made from parts of parents' chromosome, otherwise, if there is no crossover, offspring is exact copy of parents. Crossover is made in hope that new chromosomes will have good parts of old chromosomes and maybe the new chromosomes will be better.
+- **population_size**: Integer.
+- **max_generation**: Integer. A maximum number of generation.
+- **crossover_rate**: Float between 0 and 1. Crossover probability says how often will be crossover performed. If there is a crossover, offspring is made from parts of parents' chromosome, otherwise, if there is no crossover, offspring is exact copy of parents. Crossover is made in hope that new chromosomes will have good parts of old chromosomes and maybe the new chromosomes will be better.
 - **mutation_rate**: Mutation probability says how often will be parts of chromosome mutated. If mutation is performed, part of chromosome is changed. Mutation is made to prevent falling GA into local extreme, but it should not occur very often, because then GA will in fact change to random search.
-- **length_mutation_rate**: Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
+- **length_mutation_rate**: Float between 0 and 1. Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
 - **growth_rate**: In growth mutation the chromosome is enlarged.
 - **shrink_rate**: The purpose of shrink mutation is to reduce the length of the chromosome.
-- **prc_tournament_size**: The percentage of a comparison set in tournament selection
+- **prc_tournament_size**: Float between 0 and 1. The percentage of a comparison set in tournament selection
 - **candidate_size**: The number of candidate chromosomes that can be select as parents.
-- **niche_radius**:
-- **fastmode**:
-- **multithreadmode**:
-- **historyrecoverfitness**:
+- **niche_radius**: Float. Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. The concept of Niche was introduced to ensure the diversity of individuals and prevent individuals converging into a narrow region of solution space, the range of niche is a spherical area. It is fixed by the user at some estimate of the minimal separation expected between the goal solutions.  
+- **fastmode**: Boolean.
+- **multithreadmode**: Boolean.
+- **historyrecoverfitness**: Boolean.
 - **fnMutation**: It is possible to declare a custom Mutation function
 - **fnCrossover**: It is possible to declare a custom Crossover function
 
