@@ -3,7 +3,7 @@
 
 Genetic Algorithm (GA) for a  Multi-objective Optimization Problem (MOP)
 <br /><br /><br />
-# Introduction
+## Introduction
 To maintain multiple Pareto optimal solutions, Horn et all [1] have altered tournament selection. NPGA uses a tournament selection scheme based on Pareto dominance. Many (conventionally 2 candidates at once) individuals randomly chosen are compared against a subset from the entire population. When both competitors are either dominated or non dominated, the result of the tournament is decided through fitness sharing in the objective domain.
 
 ## Pareto Domination Tournments
@@ -16,7 +16,7 @@ The initially procedure is based on the random sampling of two groups of individ
 Goldberg and Richardson defined a sharing function [3]. They describe the idea of fitness sharing in a GA as a way of promoting stable sub-population, or species. The focus of fitness sharing is to distribute the population in search space over a number of different peaks, which are possible Pareto-optimal solutions. So, fitness sharing helps the algorithm to maintain the population diversity. Goldberg and Richardson say that when the candidates are either both dominated or both non-dominated, it is likely that they are in the same equivalance class. We are interested in maintaining diversity along the front, and most of the individuals in these equivalence classes can be labeled “equally” fit, so, the “best fit” candidate is determined to be that candidate which has the least number of individuals in its niche. If we wish to maintain useful diversity on population, it is apparent that it would be best to choose the candidate that has the smaller **niche count** *m_i*. The competitor with lowest niche count won the tournament.
 
 
-### Installation
+## Installation
 When NumPy has been installed, NPGA can be installed using pip as follows:
 ```bash
  pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
@@ -25,6 +25,37 @@ And later you can import with in your code:
 ```python
 import NPGA
 ```
+
+## Methods
+
+### NichedParetoGeneticAlgorithm
+```python
+NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
+	chromosome_length_set, population_size = 30, max_generation = 100,
+	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
+	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
+	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
+	fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
+```
+*Arguments*
+- *population_size*:
+- *max_generation*:
+- *crossover_rate*:
+- *mutation_rate*:
+- *length_mutation_rate*:
+- *growth_rate*:
+- *shrink_rate*:
+- *prc_tournament_size*:
+- *candidate_size*:
+- *niche_radius*:
+- *fastmode*:
+- *multithreadmode*:
+- *historyrecoverfitness*:
+- *fnMutation*:
+- *fnCrossover*:
+
+## Usage
+
 ### Define Fitness calculation function
 ```python
  def getfitness(candidate):
