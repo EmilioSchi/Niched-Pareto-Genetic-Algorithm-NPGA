@@ -10,7 +10,6 @@ To maintain multiple Pareto optimal solutions, Horn et all [1] have altered tour
 
 ### Installation
 When NumPy has been installed, NPGA can be installed using pip as follows:
-
 ```bash
 pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
@@ -23,7 +22,7 @@ import NPGA
 ```python
 def getfitness(candidate):
 	x = decode_chromosome_function(candidate)
-	return [f1(x), f2(x), f3(x), ..., fn(x)]
+	return [[F1(x), 'maximize'], [F2(x), 'minimize'], ..., [Fn(x), 'minimize']]
 
 def fnGetFitness(genes): return getfitness(genes)
 ```
@@ -31,10 +30,11 @@ def fnGetFitness(genes): return getfitness(genes)
 ### Define display function over generation
 
 ```python
-def display(candidates, statistics):
+def display(statistics):
+	print(statistic)
 	...
 
-def fnDisplay(candidate, statistic): display(candidate, statistic)
+def fnDisplay(statistic): display(statistic)
 ```
 
 ### Set parameters

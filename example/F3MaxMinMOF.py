@@ -90,7 +90,7 @@ def test():
 	geneset = '01'
 	genelen = [128]
 
-	def fnDisplay(statistic): display(statistic)
+	def fnDisplay(statistics): display(statistics)
 	def fnGetFitness(genes): return getfitness(genes)
 
 	optimalFitness = [1, 0.701, 0.51]
