@@ -1,4 +1,4 @@
-__version__ = '0.2.7'
+__version__ = '0.2.8'
 
 # -*- coding: utf-8 -*-
 #
@@ -124,10 +124,10 @@ class Statistics:
 				self.EuclideanBetter['Genes'] = ''.join(individual.Genes)
 				self.EuclideanBetter['Fitness'] = individual.Fitness
 
-			for i, fitness in enumerate(individual.FitnessToMinimise):
+			for i, (fitness, fitnessToMinimise) in enumerate(zip(individual.Fitness, individual.FitnessToMinimise)):
 				self.sum_fitness[i] = self.sum_fitness[i] + fitness
 
-				if self.best[i]['Value'] > fitness:
+				if self.best[i]['Value'] > fitnessToMinimise:
 					self.best[i]['Value'] = fitness
 					self.best[i]['Genes'] = ''.join(individual.Genes)
 					self.best[i]['Fitness'] = individual.Fitness
@@ -139,11 +139,12 @@ class Statistics:
 
 		self.HistoryGenes = history['Genes']
 		self.HistoryFitness = np.asarray(history['FitnessToMinimise'], dtype = np.float64)
-		# I want to know if first add fitness is nonDominatedable
+		# I want to know if first fitness is nonDominatedable
 		if self.FASTMODE:
 			self.nonDominatedable = IsNonDominatedableFast(self.HistoryFitness)
 		else:
 			self.nonDominatedable = IsNonDominatedable(self.HistoryFitness)
+
 		return self.EuclideanBetter['Genes'], self.EuclideanBetter['Fitness']
 
 class Chromosome:
@@ -156,11 +157,11 @@ class Chromosome:
 
 class NichedParetoGeneticAlgorithm:
 	def __init__(self, fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
-	chromosome_length_set, population_size = 30, max_generation = 100,
-	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
-	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
-	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
-	fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
+		chromosome_length_set, population_size = 30, max_generation = 100,
+		crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
+		growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
+		candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
+		fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
 
 		assert(crossover_rate >= 0 and crossover_rate <= 1), "Crossover Rate can take values between 0 and 1."
 		assert(mutation_rate >= 0 and mutation_rate <= 1), "Mutation Rate can take values between 0 and 1."
@@ -238,10 +239,11 @@ class NichedParetoGeneticAlgorithm:
 		else:
 			# call objective_function
 			fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
-			problemtypes = []
+			# Declaration of list of strings. I hope static variable is faster than dynamic
+			problemtypes = ["" for s in range(self.NUMBER_OBJECTIVE)]
 			for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(genes)):
 				fitness[i] = singlefitness
-				problemtypes.append(problemtype)
+				problemtypes[i] = problemtype
 			queue.put((genes, fitness, problemtypes, historyfound))
 
 	def __CheckSolution(self, values, problemtypes):
@@ -315,13 +317,15 @@ class NichedParetoGeneticAlgorithm:
 				chromosome.Fitness = self.history['Fitness'][itemindex]
 				chromosome.FitnessToMinimise = self.history['FitnessToMinimise'][itemindex]
 			else:
-				# call objective_function
 				chromosome.Fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
-				problemtypes = []
+				# Declaration of list of strings. I hope static variable is faster than dynamic
+				problemtypes = ["" for s in range(self.NUMBER_OBJECTIVE)]
+
+				# call objective function
 				for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(chromosome.Genes)):
 					chromosome.Fitness[i] = singlefitness
-					problemtypes.append(problemtype)
-					chromosome.FitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
+					problemtypes[i] = problemtype
+				chromosome.FitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
 
 				# Store chromosome in already seen list
 				self.history['Genes'].append(chromosome.Genes)
@@ -331,9 +335,10 @@ class NichedParetoGeneticAlgorithm:
 
 				solutionfound = self.__CheckSolution(chromosome.Fitness, problemtypes)
 
-		EDGenes, EDfitness = self.Statistics.Update(self.population, self.history)
+		BetterGenes, BetterFitness = self.Statistics.Update(self.population, self.history)
 		self.DISPLAY_FUNCTION(self.Statistics)
-		return EDGenes, EDfitness, solutionfound
+
+		return BetterGenes, BetterFitness, solutionfound
 
 	def __ParetoDominationTournments(self):
 		# Few candidate chromosomes and a comparison set, of size T_DOM, of
