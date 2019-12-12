@@ -27,8 +27,7 @@ When NumPy has been installed, NPGA can be installed using pip as follows:
 ```bash
  pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
-
-### Importing
+And later you can import with in your code:
 ```python
 import NPGA
 ```
