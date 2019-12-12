@@ -30,29 +30,24 @@ import NPGA
 
 ### NichedParetoGeneticAlgorithm
 ```python
-NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set,
-	chromosome_length_set, population_size = 30, max_generation = 100,
-	crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0,
-	growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1,
-	candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
-	fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
+NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set, chromosome_length_set, population_size = 30, max_generation = 100, crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0, growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1, candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False, fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
 ```
-*Arguments*
-- *population_size*:
-- *max_generation*:
-- *crossover_rate*:
-- *mutation_rate*:
-- *length_mutation_rate*:
-- *growth_rate*:
-- *shrink_rate*:
-- *prc_tournament_size*:
-- *candidate_size*:
-- *niche_radius*:
-- *fastmode*:
-- *multithreadmode*:
-- *historyrecoverfitness*:
-- *fnMutation*:
-- *fnCrossover*:
+#### Arguments
+- **population_size**:
+- **max_generation**:
+- **crossover_rate**:
+- **mutation_rate**:
+- **length_mutation_rate**:
+- **growth_rate**:
+- **shrink_rate**:
+- **prc_tournament_size**:
+- **candidate_size**:
+- **niche_radius**:
+- **fastmode**:
+- **multithreadmode**:
+- **historyrecoverfitness**:
+- **fnMutation**:
+- **fnCrossover**:
 
 ## Usage
 
