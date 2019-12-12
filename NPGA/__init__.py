@@ -317,12 +317,11 @@ class NichedParetoGeneticAlgorithm:
 			else:
 				# call objective_function
 				chromosome.Fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
-				chromosome.FitnessToMinimise = []
 				problemtypes = []
 				for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(chromosome.Genes)):
 					chromosome.Fitness[i] = singlefitness
 					problemtypes.append(problemtype)
-					fitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
+					chromosome.FitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
 
 				# Store chromosome in already seen list
 				self.history['Genes'].append(chromosome.Genes)
