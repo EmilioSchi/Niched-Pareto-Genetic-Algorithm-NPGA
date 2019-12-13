@@ -1,4 +1,4 @@
-__version__ = '0.2.8'
+__version__ = '0.2.9'
 
 # -*- coding: utf-8 -*-
 #
@@ -106,6 +106,7 @@ class Statistics:
 		self.HistoryGenes		 = []
 		self.HistoryFitness		 = []
 		self.nonDominatedables	 = []
+		self.ParetoSet			 = []
 
 	def Update(self, population, history):
 		self.number_combination = len(history['Genes'])
@@ -145,6 +146,11 @@ class Statistics:
 		else:
 			self.nonDominatedable = IsNonDominatedable(self.HistoryFitness)
 
+		self.ParetoSet = []
+		for i, singleNonDominatedable in enumerate(self.nonDominatedable):
+			if singleNonDominatedable:
+				self.ParetoSet.append({'Genes': history['Genes'][i], 'Fitness' : history['Fitness'][i]})
+
 		return self.EuclideanBetter['Genes'], self.EuclideanBetter['Fitness']
 
 class Chromosome:
@@ -163,13 +169,18 @@ class NichedParetoGeneticAlgorithm:
 		candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
 		fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
 
-		assert(crossover_rate >= 0 and crossover_rate <= 1), "Crossover Rate can take values between 0 and 1."
-		assert(mutation_rate >= 0 and mutation_rate <= 1), "Mutation Rate can take values between 0 and 1."
-		assert(length_mutation_rate >= 0 and length_mutation_rate <= 1), "Length Mutation Rate can take values between 0 and 1."
-		assert(prc_tournament_size >= 0 and prc_tournament_size <= 1), "The percentage of tournament size can take values between 0 and 1."
-		assert(population_size >= 4), "Population size is very small."
-		assert(candidate_size >= 2), "Candidate can be at least 2."
-		assert(max_generation >= 1), "Generation can be positive."
+		assert(crossover_rate >= 0 and crossover_rate <= 1), "[RANGE ERROR] Crossover Rate can take values between 0 and 1."
+		assert(mutation_rate >= 0 and mutation_rate <= 1), "[RANGE ERROR] Mutation Rate can take values between 0 and 1."
+		assert(length_mutation_rate >= 0 and length_mutation_rate <= 1), "[RANGE ERROR] Length Mutation Rate can take values between 0 and 1."
+		assert(prc_tournament_size >= 0 and prc_tournament_size <= 1), "[RANGE ERROR] The percentage of tournament size can take values between 0 and 1."
+		assert(population_size >= 4), "[RANGE ERROR] Population size is very small."
+		assert(candidate_size >= 2), "[RANGE ERROR] Candidate can be at least 2."
+		assert(max_generation >= 1), "[RANGE ERROR] Generation can be positive."
+
+		assert(isinstance(population_size, int)), "[TYPE ERROR] population_size can be only a integer."
+		assert(isinstance(multithreadmode, bool)), "[TYPE ERROR] multithreadmode can be only a boolean."
+		assert(isinstance(fastmode, bool)), "[TYPE ERROR] fastmode can be only a boolean."
+		assert(isinstance(historyrecoverfitness, bool)), "[TYPE ERROR] historyrecoverfitness can be only a boolean."
 
 		# Functions
 		self.OBJECTIVE_FUNCTION	 = fnGetFitness
@@ -292,7 +303,7 @@ class NichedParetoGeneticAlgorithm:
 			fitnessToMinimise = self.__ConvertMaximizeToMinimize(fitness, problemtypes)
 			tmp.append(Chromosome(genes, len(genes), fitness, fitnessToMinimise))
 			# Store chromosome in already seen list
-			if self.HISTORYRECOVERFITNESS and not historyfound:
+			if not historyfound:
 				self.history['Genes'].append(genes)
 				self.history['Fitness'].append(fitness)
 				self.history['FitnessToMinimise'].append(fitnessToMinimise)
