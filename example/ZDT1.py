@@ -85,8 +85,8 @@ def test():
 							fnGetFitness, fnDisplay, optimalFitness,
 							geneset, genelen, population_size = 150,
 							max_generation = 400, crossover_rate = 0.65,
-							mutation_rate = 1/200, niche_radius = 0.05,
-							candidate_size = 4, prc_tournament_size = 0.10,
+							mutation_rate = 1/180, niche_radius = 0.05,
+							candidate_size = 4, prc_tournament_size = 0.13,
 							fastmode = True)
 	GA.Evolution()
 
