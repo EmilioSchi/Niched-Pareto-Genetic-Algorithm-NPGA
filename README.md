@@ -99,7 +99,7 @@ best, fitness = GA.Evolution()
   <img height="150" src="img/ZDT1.png">
 </div>
 <div class="column">
-  <img height="200" src="img/Figure_1.png">
+  <img height="400" src="img/Figure_1.png">
 </div>
 </div>
 
