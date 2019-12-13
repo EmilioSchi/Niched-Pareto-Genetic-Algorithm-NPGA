@@ -92,14 +92,14 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 best, fitness = GA.Evolution()
 ```
 
-### Example
-# ZDT1.py
+# Example
+### ZDT1.py
 <div class="row">
 <div class="column">
-  <img src="img/ZDT1.png" alt="Forest" style="width:40%">
+  <img height="92" src="img/ZDT1.png">
 </div>
 <div class="column">
-  <img src="img/Figure_1.png" alt="Snow" style="width:30%">
+  <img src="img/Figure_1.png">
 </div>
 </div>
 
