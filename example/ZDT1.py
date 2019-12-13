@@ -83,9 +83,9 @@ def test():
 
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
-							geneset, genelen, population_size = 150,
+							geneset, genelen, population_size = 200,
 							max_generation = 400, crossover_rate = 0.65,
-							mutation_rate = 1/180, niche_radius = 0.05,
+							mutation_rate = 1/170, niche_radius = 0.02,
 							candidate_size = 4, prc_tournament_size = 0.13,
 							fastmode = True)
 	GA.Evolution()
