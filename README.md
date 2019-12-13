@@ -13,7 +13,7 @@ The initially procedure is based on the random sampling of two groups of individ
 - *t<sub>dom</sub>* >> 20% of N; cause the algorithm to prematurely converge to a small portion of the front. Alternative tradeoffs were never even found.
 
 ##  Fitness Sharing
-Goldberg and Richardson defined a sharing function [3]. They describe the idea of fitness sharing in a GA as a way of promoting stable sub-population, or species. The focus of fitness sharing is to distribute the population in search space over a number of different peaks, which are possible Pareto-optimal solutions. So, fitness sharing helps the algorithm to maintain the population diversity. Goldberg and Richardson say that when the candidates are either both dominated or both non-dominated, it is likely that they are in the same equivalance class. We are interested in maintaining diversity along the front, and most of the individuals in these equivalence classes can be labeled “equally” fit, so, the “best fit” candidate is determined to be that candidate which has the least number of individuals in its niche. If we wish to maintain useful diversity on population, it is apparent that it would be best to choose the candidate that has the smaller **niche count** *m_i*. The competitor with lowest niche count won the tournament.
+Goldberg and Richardson defined a sharing function [3]. They describe the idea of fitness sharing in a GA as a way of promoting stable sub-population, or species. The focus of fitness sharing is to distribute the population in search space over a number of different peaks, which are possible Pareto-optimal solutions. So, fitness sharing helps the algorithm to maintain the population diversity. Goldberg and Richardson say that when the candidates are either both dominated or both non-dominated, it is likely that they are in the same equivalance class. We are interested in maintaining diversity along the front, and most of the individuals in these equivalence classes can be labeled “equally” fit, so, the “best fit” candidate is determined to be that candidate which has the least number of individuals in its niche. If we wish to maintain useful diversity on population, it is apparent that it would be best to choose the candidate that has the smaller **niche count** *m<sub>i</sub>*. The competitor with lowest niche count won the tournament.
 
 
 ## Installation
@@ -49,7 +49,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 - **candidate_size**: The number of candidate chromosomes that can be select as parents.
 - **niche_radius**: Float. Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. The concept of Niche was introduced to ensure the diversity of individuals and prevent individuals converging into a narrow region of solution space, the range of niche is a spherical area. It is fixed by the user at some estimate of the minimal separation expected between the goal solutions.  
 - **fastmode**: Boolean. For many data points and problems to resolve it is useful set fastmode flag to True.
-- **multithreadmode**: Boolean. 
+- **multithreadmode**: Boolean.
 - **historyrecoverfitness**: Boolean. If a solution is already seen, the algorithm take the old value without compute the objective function.
 - **fnMutation**: It is possible to declare a custom Mutation function
 - **fnCrossover**: It is possible to declare a custom Crossover function
