@@ -34,11 +34,11 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 ```
 #### Arguments
 - **fnGetFitness**: The fitness function to evaluate the solution domain.
-- **fnDisplay**:
+- **fnDisplay**: At the end of each generation it is possible call the dispay function to see the state of the algorithm and useful statistics.
 - **optimal_fitness**: The solution that wants to be reached.
 - **chromosome_set**: String. A set of characters used in chromosome.
 - **chromosome_length_set**: List of sizes that the chromosome can be assumed.
-- **population_size**: Integer.
+- **population_size**: Integer. The number of individuals present in each generation.
 - **max_generation**: Integer. A maximum number of generation.
 - **crossover_rate**: Float between 0 and 1. Crossover probability says how often will be crossover performed. If there is a crossover, offspring is made from parts of parents' chromosome, otherwise, if there is no crossover, offspring is exact copy of parents. Crossover is made in hope that new chromosomes will have good parts of old chromosomes and maybe the new chromosomes will be better.
 - **mutation_rate**: Mutation probability says how often will be parts of chromosome mutated. If mutation is performed, part of chromosome is changed. Mutation is made to prevent falling GA into local extreme, but it should not occur very often, because then GA will in fact change to random search.
@@ -48,9 +48,9 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 - **prc_tournament_size**: Float between 0 and 1. The percentage of population that will form a comparison set in tournament selection.
 - **candidate_size**: The number of candidate chromosomes that can be select as parents.
 - **niche_radius**: Float. Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. The concept of Niche was introduced to ensure the diversity of individuals and prevent individuals converging into a narrow region of solution space, the range of niche is a spherical area. It is fixed by the user at some estimate of the minimal separation expected between the goal solutions.  
-- **fastmode**: Boolean.
-- **multithreadmode**: Boolean.
-- **historyrecoverfitness**: Boolean.
+- **fastmode**: Boolean. For many data points and problems to resolve it is useful set fastmode flag to True.
+- **multithreadmode**: Boolean. 
+- **historyrecoverfitness**: Boolean. If a solution is already seen, the algorithm take the old value without compute the objective function.
 - **fnMutation**: It is possible to declare a custom Mutation function
 - **fnCrossover**: It is possible to declare a custom Crossover function
 
