@@ -92,7 +92,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 best, fitness = GA.Evolution()
 ```
 
-# Example
+## Example
 ### ZDT1.py
 <div class="row">
 <div class="column">
