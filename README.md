@@ -92,6 +92,17 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 best, fitness = GA.Evolution()
 ```
 
+### Example
+# ZDT1.py
+<div class="row">
+  <div class="column">
+    <img src="Figure_1.png" alt="Snow" style="width:100%">
+  </div>
+  <div class="column">
+    <img src="ZDT1.png" alt="Forest" style="width:100%">
+  </div>
+</div>
+
 ## Reference
 
 [1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolutionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994
