@@ -99,6 +99,12 @@ best, fitness = GA.Evolution()
 <img height="400" src="img/Figure_1.png" />
 </center>
 
+### ZDT3.py
+<center>
+<img height="120" src="img/ZDT3.png" />
+<img height="400" src="img/Figure_3.png" />
+</center>
+
 ## Reference
 
 [1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolutionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994

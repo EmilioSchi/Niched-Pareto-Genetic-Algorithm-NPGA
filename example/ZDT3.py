@@ -26,21 +26,22 @@ def decodechromosome(bits, BitsForEachNumber, SizeVector):
 		x[i] = scaleMinMax(dec, 0, max_current, 0, 1)
 	return x
 
-def ZDT1(x):
+def ZDT3(x):
 	f1 = x[0]
 	g = 1 + 9 * (np.sum(x[1:]) / (len(x)- 1))
-	f2 = g * (1 - np.sqrt(x[0] / g))
+	f2 = g * (1 - np.sqrt(f1 / g) - (f1 / g) * math.sin(10 * math.pi * f1))
 	return f1, f2
 
 def getfitness(candidate, BitsForEachNumber, SizeVector):
 	x = decodechromosome(candidate, BitsForEachNumber, SizeVector)
-	F1, F2 = ZDT1(x)
+	F1, F2 = ZDT3(x)
 	return [[F1, 'minimize'], [F2, 'minimize']]
 
 class StaticGen:
 	Generation = 1
 
 def display(statistics):
+
 	f1x = []
 	f2x = []
 	for point in statistics.ParetoSet:
@@ -53,10 +54,9 @@ def display(statistics):
 		xpop.append(individual.Fitness[0])
 		ypop.append(individual.Fitness[1])
 
-
 	plt.figure(1)
 	plt.clf()
-	plt.axis([0, 1, 0, 4])
+	plt.axis([0, 1, -1, 3])
 	plt.xlabel('F1(x)')
 	plt.ylabel('F2(x)')
 	plt.plot(xpop, ypop, 'ko', label='individuals')
@@ -73,7 +73,7 @@ def display(statistics):
 def test():
 	geneset = '01'
 	BitsForEachNumber = 16
-	SizeVector = 20
+	SizeVector = 30
 	genelen = [BitsForEachNumber * SizeVector]
 
 	def fnDisplay(statistic): display(statistic)
@@ -84,9 +84,9 @@ def test():
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
 							geneset, genelen, population_size = 200,
-							max_generation = 400, crossover_rate = 0.65,
-							mutation_rate = 1/170, niche_radius = 0.02,
-							candidate_size = 4, prc_tournament_size = 0.13,
+							max_generation = 1000, crossover_rate = 0.7,
+							mutation_rate = 1/200, niche_radius = 0.03,
+							candidate_size = 3, prc_tournament_size = 0.10,
 							fastmode = True)
 	GA.Evolution()
 

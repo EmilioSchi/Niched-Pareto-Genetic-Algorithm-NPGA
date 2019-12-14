@@ -1,4 +1,4 @@
-__version__ = '0.2.9'
+__version__ = '0.2.98'
 
 # -*- coding: utf-8 -*-
 #
@@ -29,6 +29,8 @@ import numpy as np
 
 # Utility funcion
 def FlipCoin(probability):
+	if probability == 1:
+		return True
 	return random.random() < probability
 
 def EuclideanDistance(fitnessA, fitnessB):
@@ -91,7 +93,7 @@ class Statistics:
 		self.NUMBER_OBJECTIVE	 = len(optimal_fitness)
 		self.FASTMODE			 = fastmode
 		self.COMPARE_FITNESS	 = optimal_fitness
-		self.number_combination	 = 0
+		self.Combination		 = 0
 		self.population 		 = []
 		self.population_size	 = 0
 		# BUG OF PYTHON3 (SAME ADDRESS POINTER ASSIGNMENT)
@@ -103,13 +105,10 @@ class Statistics:
 		self.EuclideanBetter = {'Genes': [], 'Distance': 999999, 'Fitness' : []}
 		self.sum_fitness		 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 		self.avg				 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
-		self.HistoryGenes		 = []
-		self.HistoryFitness		 = []
-		self.nonDominatedables	 = []
+		self.History			 = []
 		self.ParetoSet			 = []
 
-	def Update(self, population, history):
-		self.number_combination = len(history['Genes'])
+	def Update(self, population):
 		self.sum_fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 		self.population = population
 		self.population_size = 0
@@ -138,20 +137,21 @@ class Statistics:
 		for i, sum in enumerate(self.sum_fitness):
 			self.avg[i] = sum / self.population_size
 
-		self.HistoryGenes = history['Genes']
-		self.HistoryFitness = np.asarray(history['FitnessToMinimise'], dtype = np.float64)
-		# I want to know if first fitness is nonDominatedable
+		CompareSet = population
+		CompareSet += self.ParetoSet
+		fitness = [item.FitnessToMinimise for item in CompareSet]
+		fitness = np.asarray(fitness, dtype = np.float64)
 		if self.FASTMODE:
-			self.nonDominatedable = IsNonDominatedableFast(self.HistoryFitness)
+			nonDominatedable = IsNonDominatedableFast(fitness)
 		else:
-			self.nonDominatedable = IsNonDominatedable(self.HistoryFitness)
+			nonDominatedable = IsNonDominatedable(fitness)
 
 		self.ParetoSet = []
-		for i, singleNonDominatedable in enumerate(self.nonDominatedable):
+		for i, (singleNonDominatedable, chromosome) in enumerate(zip(nonDominatedable, CompareSet)):
 			if singleNonDominatedable:
-				self.ParetoSet.append({'Genes': history['Genes'][i], 'Fitness' : history['Fitness'][i]})
+				self.ParetoSet.append(chromosome)
 
-		return self.EuclideanBetter['Genes'], self.EuclideanBetter['Fitness']
+		return self.ParetoSet
 
 class Chromosome:
 	def __init__(self, genes, dimention, fitness, fitnessToMinimise):
@@ -169,18 +169,27 @@ class NichedParetoGeneticAlgorithm:
 		candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False,
 		fnMutation = None, fnCrossover = None, historyrecoverfitness = False):
 
-		assert(crossover_rate >= 0 and crossover_rate <= 1), "[RANGE ERROR] Crossover Rate can take values between 0 and 1."
-		assert(mutation_rate >= 0 and mutation_rate <= 1), "[RANGE ERROR] Mutation Rate can take values between 0 and 1."
-		assert(length_mutation_rate >= 0 and length_mutation_rate <= 1), "[RANGE ERROR] Length Mutation Rate can take values between 0 and 1."
-		assert(prc_tournament_size >= 0 and prc_tournament_size <= 1), "[RANGE ERROR] The percentage of tournament size can take values between 0 and 1."
+		assert(isinstance(chromosome_length_set, list)), "[TYPE ERROR] chromosome_length_set must be expressed as a list of lengths."
+		assert(isinstance(population_size, int)), "[TYPE ERROR] Population Size must be an integer."
+		assert(isinstance(candidate_size, int)), "[TYPE ERROR] The number of candidates must be an integer."
+		assert(isinstance(max_generation, int)), "[TYPE ERROR] Maximum number of generation must be an integer."
+		assert(isinstance(crossover_rate, (float, int))), "[TYPE ERROR] Crossover Rate must take values between 0 and 1."
+		assert(isinstance(mutation_rate, (float, int))), "[TYPE ERROR] Mutation Rate must take values between 0 and 1."
+		assert(isinstance(length_mutation_rate, (float, int))), "[TYPE ERROR] Length Mutation Rate must take values between 0 and 1."
+		assert(isinstance(prc_tournament_size, (float, int))), "[TYPE ERROR] Length Mutation Rate must take values between 0 and 1."
+		assert(isinstance(niche_radius, (float, int))), "[TYPE ERROR] NICHE RADIUS wrong value."
+		assert(isinstance(growth_rate, (float, int))), "[TYPE ERROR] Growth Rate wrong value."
+		assert(isinstance(shrink_rate, (float, int))), "[TYPE ERROR] Shrink Rate wrong value."
+		assert(isinstance(multithreadmode, bool)), "[TYPE ERROR] multithreadmode must be a boolean."
+		assert(isinstance(fastmode, bool)), "[TYPE ERROR] fastmode must be a boolean."
+		assert(isinstance(historyrecoverfitness, bool)), "[TYPE ERROR] historyrecoverfitness must be a boolean."
+		assert(crossover_rate >= 0 and crossover_rate <= 1), "[RANGE ERROR] Crossover Rate must take values between 0 and 1."
+		assert(mutation_rate >= 0 and mutation_rate <= 1), "[RANGE ERROR] Mutation Rate must take values between 0 and 1."
+		assert(length_mutation_rate >= 0 and length_mutation_rate <= 1), "[RANGE ERROR] Length Mutation Rate must take values between 0 and 1."
+		assert(prc_tournament_size >= 0 and prc_tournament_size <= 1), "[RANGE ERROR] The percentage of tournament size must take values between 0 and 1."
 		assert(population_size >= 4), "[RANGE ERROR] Population size is very small."
-		assert(candidate_size >= 2), "[RANGE ERROR] Candidate can be at least 2."
-		assert(max_generation >= 1), "[RANGE ERROR] Generation can be positive."
-
-		assert(isinstance(population_size, int)), "[TYPE ERROR] population_size can be only a integer."
-		assert(isinstance(multithreadmode, bool)), "[TYPE ERROR] multithreadmode can be only a boolean."
-		assert(isinstance(fastmode, bool)), "[TYPE ERROR] fastmode can be only a boolean."
-		assert(isinstance(historyrecoverfitness, bool)), "[TYPE ERROR] historyrecoverfitness can be only a boolean."
+		assert(candidate_size >= 2), "[RANGE ERROR] Candidate must be at least 2."
+		assert(max_generation >= 1), "[RANGE ERROR] Generation must be positive."
 
 		# Functions
 		self.OBJECTIVE_FUNCTION	 = fnGetFitness
@@ -232,21 +241,33 @@ class NichedParetoGeneticAlgorithm:
 
 		# Statistic parameters
 		self.Statistics = Statistics(self.OPTIMAL_FITNESS, self.FASTMODE)
-
 		self.population = []
-		self.history = {'Genes' : [], 'Fitness' : [], 'FitnessToMinimise' : [], 'ProblemType' : []}
+
+	# Only dynamic structure in the code (I HOPE)
+	def __AddToHistory(self, genes, fitness, fitnessfominimise, problemtype):
+		self.Statistics.Combination += 1
+		if self.HISTORYRECOVERFITNESS:
+			self.Statistics.History.append({
+				'Genes' : genes,
+				'Fitness' : fitness,
+				'FitnessToMinimise' : fitnessfominimise,
+				'ProblemType' : problemtype
+				})
 
 	def __AlreadySeen(self, genes):
-		if self.HISTORYRECOVERFITNESS and (genes in self.history['Genes']):
-			itemindex = self.history['Genes'].index(genes)
-			return itemindex, True
+		if self.HISTORYRECOVERFITNESS:# and (genes in self.history['Genes']):
+			entry = next((item for item in self.Statistics.History if item['Genes'] == genes), False)
+			if entry:
+				return entry, True
+			else:
+				return None, False
 		else:
-			return 0, False
+			return None, False
 
 	def __ThreadObjectiveFunction(self, genes, queue):
-		itemindex, historyfound = self.__AlreadySeen(genes)
+		entry, historyfound = self.__AlreadySeen(genes)
 		if historyfound:
-			queue.put((genes, self.history['Fitness'][itemindex], self.history['ProblemType'][itemindex], historyfound))
+			queue.put((genes, entry['Fitness'], entry['ProblemType'], historyfound))
 		else:
 			# call objective_function
 			fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
@@ -304,16 +325,13 @@ class NichedParetoGeneticAlgorithm:
 			tmp.append(Chromosome(genes, len(genes), fitness, fitnessToMinimise))
 			# Store chromosome in already seen list
 			if not historyfound:
-				self.history['Genes'].append(genes)
-				self.history['Fitness'].append(fitness)
-				self.history['FitnessToMinimise'].append(fitnessToMinimise)
-				self.history['ProblemType'].append(problemtypes)
+				self.__AddToHistory(genes, fitness, fitnessToMinimise, problemtypes)
 
 			solutionfound = self.__CheckSolution(fitness, problemtypes)
 
 		self.population = tmp
 
-		BetterGenes, Betterfitness = self.Statistics.Update(self.population, self.history)
+		BetterGenes, Betterfitness = self.Statistics.Update(self.population)
 		self.DISPLAY_FUNCTION(self.Statistics)
 
 		return BetterGenes, Betterfitness, solutionfound
@@ -323,14 +341,15 @@ class NichedParetoGeneticAlgorithm:
 			return self.__MultiThreadEvaluate()
 
 		for chromosome in self.population:
-			itemindex, historyfound = self.__AlreadySeen(chromosome.Genes)
+			entry, historyfound = self.__AlreadySeen(chromosome.Genes)
 			if historyfound:
-				chromosome.Fitness = self.history['Fitness'][itemindex]
-				chromosome.FitnessToMinimise = self.history['FitnessToMinimise'][itemindex]
+				# entry['Genes'], entry['Fitness'], entry['ProblemType']
+				chromosome.Fitness = entry['Fitness']
+				chromosome.FitnessToMinimise = entry['FitnessToMinimise']
 			else:
 				chromosome.Fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 				# Declaration of list of strings. I hope static variable is faster than dynamic
-				problemtypes = ["" for s in range(self.NUMBER_OBJECTIVE)]
+				problemtypes = ["        " for s in range(self.NUMBER_OBJECTIVE)]
 
 				# call objective function
 				for i, (singlefitness, problemtype) in enumerate(self.OBJECTIVE_FUNCTION(chromosome.Genes)):
@@ -339,17 +358,14 @@ class NichedParetoGeneticAlgorithm:
 				chromosome.FitnessToMinimise = self.__ConvertMaximizeToMinimize(chromosome.Fitness, problemtypes)
 
 				# Store chromosome in already seen list
-				self.history['Genes'].append(chromosome.Genes)
-				self.history['Fitness'].append(chromosome.Fitness)
-				self.history['FitnessToMinimise'].append(chromosome.FitnessToMinimise)
-				self.history['ProblemType'].append(problemtypes)
+				self.__AddToHistory(chromosome.Genes, chromosome.Fitness, chromosome.FitnessToMinimise, problemtypes)
 
 				solutionfound = self.__CheckSolution(chromosome.Fitness, problemtypes)
 
-		BetterGenes, BetterFitness = self.Statistics.Update(self.population, self.history)
+		ParetoSolutions = self.Statistics.Update(self.population)
 		self.DISPLAY_FUNCTION(self.Statistics)
 
-		return BetterGenes, BetterFitness, solutionfound
+		return ParetoSolutions, solutionfound
 
 	def __ParetoDominationTournments(self):
 		# Few candidate chromosomes and a comparison set, of size T_DOM, of
@@ -545,9 +561,9 @@ class NichedParetoGeneticAlgorithm:
 
 		for _ in range(self.MAX_GENERATIONS):
 			# Calculation of fitness
-			chromosome, fitness, found = self.__Evaluate()
+			ParetoSolutions, found = self.__Evaluate()
 			if found:
-				return chromosome, fitness
+				return ParetoSolutions
 
 			# Operators
 			newpopulation = []
@@ -568,4 +584,4 @@ class NichedParetoGeneticAlgorithm:
 			# Replace Population
 			self.population = newpopulation
 
-		return chromosome, fitness
+		return ParetoSolutions
