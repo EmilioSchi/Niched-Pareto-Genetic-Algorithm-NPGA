@@ -96,10 +96,7 @@ def test():
 							mutation_rate = 1/128, niche_radius = 0.08,
 							candidate_size = 2, prc_tournament_size = 0.2,
 							fastmode = True, multithreadmode = True)
-	best, fitness = GA.Evolution()
 
+	paretosolution = GA.Evolution()
 
-	return best, decodechromosome(best)
-
-print(test())
-plt.show()
+test()

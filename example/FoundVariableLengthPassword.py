@@ -41,8 +41,6 @@ def test():
 							mutation_rate = 0.04, niche_radius = 2,
 							length_mutation_rate = 0.05, fastmode = True,
 							candidate_size = 3, prc_tournament_size = 0.1)
-	best, fitness = GA.Evolution()
+	GA.Evolution()
 
-	return best
-
-print(test())
+test()
