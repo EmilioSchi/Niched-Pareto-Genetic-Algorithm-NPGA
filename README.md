@@ -78,7 +78,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 ### Set parameters
 ```python
  geneset = '01'
- genelen = [64] # or genelen = [10, 12, 15] if there are more choromosome lenght
+ genelen = [64] # or genelen = [10, 12, 15] if there are more choromosome lengths
  optimalFitness = [0, 0]
  GA = NPGA.NichedParetoGeneticAlgorithm(
  	fnGetFitness, fnDisplay, optimalFitness,
