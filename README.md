@@ -89,7 +89,7 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 ```
 ### Run
 ```python
-best, fitness = GA.Evolution()
+paretopoints = GA.Evolution()
 ```
 
 ## Example
