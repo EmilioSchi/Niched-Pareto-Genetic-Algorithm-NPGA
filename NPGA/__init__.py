@@ -331,10 +331,10 @@ class NichedParetoGeneticAlgorithm:
 
 		self.population = tmp
 
-		BetterGenes, Betterfitness = self.Statistics.Update(self.population)
+		ParetoSolutions = self.Statistics.Update(self.population)
 		self.DISPLAY_FUNCTION(self.Statistics)
 
-		return BetterGenes, Betterfitness, solutionfound
+		return ParetoSolutions, solutionfound
 
 	def __Evaluate(self):
 		if self.MULTITHREADMODE:
