@@ -95,7 +95,7 @@ best, fitness = GA.Evolution()
 ## Example
 ### ZDT1.py
 <center>
-<img height="120" src="img/ZDT1.png" />
+<img height="130" src="img/ZDT1.png" />
 <img height="400" src="img/Figure_1.png" />
 </center>
 
