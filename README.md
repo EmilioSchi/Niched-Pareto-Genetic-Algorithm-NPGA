@@ -94,14 +94,10 @@ best, fitness = GA.Evolution()
 
 ## Example
 ### ZDT1.py
-<div class="row">
-<div class="column">
-  <img height="150" src="img/ZDT1.png">
-</div>
-<div class="column">
-  <img height="400" src="img/Figure_1.png">
-</div>
-</div>
+<p float="left">
+  <img height="120" src="img/ZDT1.png" />
+  <img height="400" src="img/Figure_1.png" />
+</p>
 
 ## Reference
 
