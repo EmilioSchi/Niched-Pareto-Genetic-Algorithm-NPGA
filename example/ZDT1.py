@@ -61,7 +61,7 @@ def display(statistics):
 	plt.ylabel('F2(x)')
 	plt.plot(xpop, ypop, 'ko', label='individuals')
 	plt.plot(f1x, f2x, 'ro', label='pareto front')
-	plt.title('Zitzler-Deb-Thiele\'s function 3  -  GENERATION: ' + str(StaticGen.Generation))
+	plt.title('Zitzler-Deb-Thiele\'s function 1  -  GENERATION: ' + str(StaticGen.Generation))
 	plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=2)
 	plt.grid()
 	plt.draw()
