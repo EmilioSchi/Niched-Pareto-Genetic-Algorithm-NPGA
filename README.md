@@ -108,9 +108,9 @@ paretopoints = GA.Evolution()
 ## Reference
 
 <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.4189&rep=rep1&type=pdf"> [1] N. Nafploitis J. Horn and D. E. Goldberg.  A niched pareto genetic algorithmfor multiobjective optimization.Proceedings of the First IEEE Conference on Evolutionary Computation. Z. Michalewicz, Ed. Piscataway, NJ: IEEE Press, page82–87,1994 </a>
-
+<br />
 <a href="https://www.researchgate.net/profile/Jeffrey_Horn/publication/2763393_Multiobjective_Optimization_Using_The_Niche_Pareto_Genetic_Algorithm/links/55e80a8c08aeb6516262f355.pdf">
 [2] N. Nafploitis J. Horn. Multiobjective optimization using the niched pareto genetic algorithm.IlliGAL Report No.93005. Illinois Genetic Algorithm Laboratory.University of Illinois at Urbana-Champaign, 1993. </a>
-
+<br />
 <a href="https://books.google.it/books?hl=it&lr=&id=MYJ_AAAAQBAJ&oi=fnd&pg=PA41&dq=J.Richardson+D.E.Goldberg.+Genetic+algorithms+with+sharing+for+multimodalfunction+optimization.&ots=XwtKtk8ACz&sig=UcfIiupu2_Z11Op2hxg9juAE7zo#v=onepage&q&f=false">
 [3] J.Richardson D.E.Goldberg.   Genetic algorithms with sharing for multimodalfunction  optimization.In:  Proceedings  of  the  second  international  conference  ongenetic algorithms, Lawrence Erlbaum Associates, Hillsdale, NJ, pages41–49,1987.</a>
