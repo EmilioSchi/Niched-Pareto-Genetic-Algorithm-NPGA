@@ -105,3 +105,4 @@ def test():
 	paretosolution = GA.Evolution()
 
 test()
+plt.show()
