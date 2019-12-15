@@ -72,7 +72,7 @@ def display(statistics):
 
 def test():
 	geneset = '01'
-	BitsForEachNumber = 16
+	BitsForEachNumber = 12
 	SizeVector = 30
 	genelen = [BitsForEachNumber * SizeVector]
 
@@ -83,10 +83,10 @@ def test():
 
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
-							geneset, genelen, population_size = 200,
-							max_generation = 1000, crossover_rate = 0.7,
-							mutation_rate = 1/200, niche_radius = 0.03,
-							candidate_size = 3, prc_tournament_size = 0.10,
+							geneset, genelen, population_size = 120,
+							max_generation = 5000, crossover_rate = 0.9,
+							mutation_rate = 1/300, niche_radius = 0.04,
+							candidate_size = 3, prc_tournament_size = 0.13,
 							fastmode = True)
 	GA.Evolution()
 
