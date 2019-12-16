@@ -72,7 +72,7 @@ def display(statistics):
 
 def test():
 	geneset = '01'
-	BitsForEachNumber = 12
+	BitsForEachNumber = 64
 	SizeVector = 30
 	genelen = [BitsForEachNumber * SizeVector]
 
@@ -85,7 +85,7 @@ def test():
 							fnGetFitness, fnDisplay, optimalFitness,
 							geneset, genelen, population_size = 120,
 							max_generation = 5000, crossover_rate = 0.9,
-							mutation_rate = 1/300, niche_radius = 0.04,
+							mutation_rate = 1/500, niche_radius = 0.04,
 							candidate_size = 3, prc_tournament_size = 0.13,
 							fastmode = True)
 	GA.Evolution()

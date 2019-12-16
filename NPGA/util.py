@@ -25,8 +25,6 @@ import numpy as np
 import random
 # Utility funcion
 def FlipCoin(probability):
-	if probability == 1:
-		return True
 	return random.random() < probability
 
 def EuclideanDistance(fitnessA, fitnessB):
