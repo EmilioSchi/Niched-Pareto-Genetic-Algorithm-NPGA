@@ -24,4 +24,4 @@
 from .NichedParetoGeneticAlgorithm import NichedParetoGeneticAlgorithm
 
 # used for setup.py
-__version__ = '0.3'
+__version__ = '0.3.1'

@@ -23,7 +23,7 @@
 
 class Chromosome:
 	def __init__(self, genes, dimention, fitness = -1, fitnessToMinimise = -1, problemtype = '        '):
-		self.Genes			 = genes
+		self.Genes			 = ''.join(genes)
 		self.Length			 = dimention
 		self.Fitness		 = fitness
 		# maximization problem is the negation of minimazion problem

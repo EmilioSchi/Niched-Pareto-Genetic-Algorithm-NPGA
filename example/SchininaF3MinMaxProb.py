@@ -1,6 +1,7 @@
 import math
 import NPGA
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 def scaleMinMax(x, xmin, xmax, mindesired, maxdesired):
@@ -27,21 +28,23 @@ def decodechromosome(bits):
 class StaticGen:
 	Generation = 1
 
+
 def display(statistics):
+
 	xpop = []
 	ypop = []
-	for candidate in statistics.population:
-		xpop.append(decodechromosome(candidate.Genes))
-		ypop.append(candidate.Fitness)
+	for individual in statistics.population:
+		xpop.append(decodechromosome(individual.Genes))
+		ypop.append(individual.Fitness)
 
 	xbest = []
 	ybest = []
-	for candidate in statistics.best:
-		xbest.append(decodechromosome(candidate['Genes']))
-		ybest.append(candidate['Fitness'])
+	for specie in statistics.Species:
+		xbest.append(decodechromosome(specie.Genes))
+		ybest.append(specie.Fitness)
 
-	xEUbest = [decodechromosome(statistics.EuclideanBetter['Genes'])]
-	yEUbest = [statistics.EuclideanBetter['Fitness']]
+	xEUbest = [decodechromosome(statistics.EuclideanBetter.Genes)]
+	yEUbest = [statistics.EuclideanBetter.Fitness]
 
 	x = np.linspace(-10,10,100)
 	y21 = [F1(i) for i in x if True]
@@ -50,8 +53,8 @@ def display(statistics):
 
 	plt.figure(1)
 	plt.clf()
+
 	plt.axis([-10, 10, -1.5, 3])
-	#plt.legend(['Generation'], loc=1)
 	plt.plot(x, y21, 'k')
 	plt.plot(x, y22, 'k')
 	plt.plot(x, y33, 'k')
@@ -59,16 +62,32 @@ def display(statistics):
 	plt.plot(xbest, ybest, 'go')
 	plt.plot(xEUbest, yEUbest, 'ro')
 	plt.title('Simple MO problem, GENERATION: ' + str(StaticGen.Generation))
-	#plt.text(4.3, 28, 'F1()')
-	#plt.text(4.6, 13, 'F2()')
+	plt.xlabel('x')
+	plt.ylabel('y')
 	plt.grid()
+
 	plt.draw()
-	plt.pause(0.1)
+	plt.pause(0.001)
 	plt.show(block=False)
 
-	print(statistics.EuclideanBetter['Genes'], end='\t')
-	print(statistics.EuclideanBetter['Fitness'], end='\t')
-	print(statistics.EuclideanBetter['Distance'], end='\n')
+	f1x = []
+	f2x = []
+	f3x = []
+	for point in statistics.ParetoSet:
+		f1x.append(point.Fitness[0])
+		f2x.append(point.Fitness[1])
+		f3x.append(point.Fitness[2])
+	fig = plt.figure(2)
+	ax = fig.add_subplot(111, projection='3d')
+	ax.scatter(f1x, f3x, f2x, c='k', marker='o')
+	#plt.title('Pareto Front')
+	plt.grid()
+	plt.draw()
+	plt.pause(0.001)
+	plt.show(block=False)
+
+	print(statistics.EuclideanBetter.Genes, end='\t')
+	print(statistics.EuclideanBetter.Fitness)
 
 	StaticGen.Generation = StaticGen.Generation + 1
 
@@ -97,11 +116,11 @@ def test():
 
 	GA = NPGA.NichedParetoGeneticAlgorithm(
 							fnGetFitness, fnDisplay, optimalFitness,
-							geneset, genelen, population_size = 20,
-							max_generation = 100, crossover_rate = 0.65,
-							mutation_rate = 1/128, niche_radius = 0.08,
+							geneset, genelen, population_size = 50,
+							max_generation = 200, crossover_rate = 0.8,
+							mutation_rate = 1/100, niche_radius = 0.08,
 							candidate_size = 2, prc_tournament_size = 0.2,
-							fastmode = True, multithreadmode = True)
+							fastmode = True)
 	paretosolution = GA.Evolution()
 
 test()

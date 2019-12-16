@@ -30,43 +30,66 @@ class StaticGen:
 def display(statistics):
 	xpop = []
 	ypop = []
+	#print(len(statistics.population))
+
 	for candidate in statistics.population:
 		xpop.append(decodechromosome(candidate.Genes))
 		ypop.append(candidate.Fitness)
 
 	xbest = []
 	ybest = []
-	for candidate in statistics.best:
-		xbest.append(decodechromosome(candidate['Genes']))
-		ybest.append(candidate['Fitness'])
+	for specie in statistics.Species:
+		xbest.append(decodechromosome(specie.Genes))
+		ybest.append(specie.Fitness)
 
-	xEUbest = [decodechromosome(statistics.EuclideanBetter['Genes'])]
-	yEUbest = [statistics.EuclideanBetter['Fitness']]
+	xEUbest = [decodechromosome(statistics.EuclideanBetter.Genes)]
+	yEUbest = [statistics.EuclideanBetter.Fitness]
 
 	x = np.linspace(-6,6,100)
 	y21 = [f21(i) for i in x if True]
 	y22 = [f22(i) for i in x if True]
 
-	plt.figure(1)
+	plt.figure(1, figsize=(10,4))
 	plt.clf()
+
+	plt.subplot(1, 2, 1)
 	plt.axis([-6, 6, 0, 40])
-	#plt.legend(['Generation'], loc=1)
+
 	plt.plot(x, y21, 'k')
 	plt.plot(x, y22, 'k')
 	plt.plot(xpop, ypop, 'ko')
 	plt.plot(xbest, ybest, 'go')
 	plt.plot(xEUbest, yEUbest, 'ro')
+
 	plt.title('Schaffer\'s function F2, GENERATION: ' + str(StaticGen.Generation))
-	plt.text(4.3, 28, 'f21()')
-	plt.text(4.6, 13, 'f22()')
+	plt.text(4.2, 28, 'f21()')
+	plt.text(4.5, 13, 'f22()')
+	plt.xlabel('x')
+	plt.ylabel('y')
 	plt.grid()
+
+
+	f1x = []
+	f2x = []
+	for point in statistics.ParetoSet:
+		f1x.append(point.Fitness[0])
+		f2x.append(point.Fitness[1])
+
+	plt.subplot(1, 2, 2)
+	plt.axis([0, 4.5, 0, 4.5])
+
+	plt.plot(f1x, f2x, 'ko')
+	plt.title('Pareto Front')
+	plt.xlabel('F21(x)')
+	plt.ylabel('F22(x)')
+	plt.grid()
+
 	plt.draw()
 	plt.pause(0.1)
 	plt.show(block=False)
 
-	print(statistics.EuclideanBetter['Genes'], end='\t')
-	print(statistics.EuclideanBetter['Fitness'], end='\t')
-	print(statistics.EuclideanBetter['Distance'], end='\n')
+	print(statistics.EuclideanBetter.Genes, end='\t')
+	print(statistics.EuclideanBetter.Fitness)
 
 	StaticGen.Generation = StaticGen.Generation + 1
 

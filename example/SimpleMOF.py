@@ -36,12 +36,12 @@ def display(statistics):
 
 	xbest = []
 	ybest = []
-	for candidate in statistics.best:
-		xbest.append(decodechromosome(candidate['Genes']))
-		ybest.append(candidate['Fitness'])
+	for specie in statistics.Species:
+		xbest.append(decodechromosome(specie.Genes))
+		ybest.append(specie.Fitness)
 
-	xEUbest = [decodechromosome(statistics.EuclideanBetter['Genes'])]
-	yEUbest = [statistics.EuclideanBetter['Fitness']]
+	xEUbest = [decodechromosome(statistics.EuclideanBetter.Genes)]
+	yEUbest = [statistics.EuclideanBetter.Fitness]
 
 	x = np.linspace(-10,10,100)
 	y21 = [F1(i) for i in x if True]
@@ -63,9 +63,8 @@ def display(statistics):
 	plt.pause(0.1)
 	plt.show(block=False)
 
-	print(statistics.EuclideanBetter['Genes'], end='\t')
-	print(statistics.EuclideanBetter['Fitness'], end='\t')
-	print(statistics.EuclideanBetter['Distance'], end='\n')
+	print(statistics.EuclideanBetter.Genes, end='\t')
+	print(statistics.EuclideanBetter.Fitness)
 
 	StaticGen.Generation = StaticGen.Generation + 1
 

@@ -6,9 +6,8 @@ class StaticVariables:
 
 def display(statistics):
 
-	print(statistics.EuclideanBetter['Genes'], end='\t')
-	print(statistics.EuclideanBetter['Fitness'], end='\t')
-	print(statistics.EuclideanBetter['Distance'], end='\n')
+	print(statistics.EuclideanBetter.Genes, end='\t')
+	print(statistics.EuclideanBetter.Fitness)
 
 	StaticVariables.Generation = StaticVariables.Generation + 1
 

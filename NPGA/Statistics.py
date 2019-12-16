@@ -22,69 +22,106 @@
 # limitations under the License.
 
 import numpy as np
-from .util import FlipCoin, EuclideanDistance, EuclideanDistanceFast, IsNonDominatedable, IsNonDominatedableFast
+from .Chromosome import Chromosome
+from .util import EuclideanDistance, EuclideanDistanceFast, IsNonDominatedable, IsNonDominatedableFast
 
 class Statistics:
 	def __init__(self, optimal_fitness, fastmode):
 		self.NUMBER_OBJECTIVE	 = len(optimal_fitness)
 		self.FASTMODE			 = fastmode
-		self.COMPARE_FITNESS	 = optimal_fitness
+		self.OPTIMAL_FITNESS	 = optimal_fitness
 		self.Combination		 = 0
 		self.population 		 = []
-		self.population_size	 = 0
+		self.__population_size	 = 0
 		# BUG OF PYTHON3 (SAME ADDRESS POINTER ASSIGNMENT)
 		#self.BEST = [{'Genes': [], 'Value': 999999, 'Fitness' : []}] * self.NUMBER_OBJECTIVE
-		self.best = []
-		for _ in range(self.NUMBER_OBJECTIVE):
-			self.best.append({'Genes': [], 'Value': 999999, 'Fitness' : []})
 
-		self.EuclideanBetter = {'Genes': [], 'Distance': 999999, 'Fitness' : []}
-		self.sum_fitness		 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+		self.Species = []
+		for _ in range(self.NUMBER_OBJECTIVE):
+			self.Species.append(Chromosome('', 0))
+		self.__speciation_value = [999999] * self.NUMBER_OBJECTIVE
+
+		self.EuclideanBetter = Chromosome('', 0)
+		self.__distance = 999999
+		self.__sum_fitness		 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 		self.avg				 = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
 		self.History			 = []
 		self.ParetoSet			 = []
 
-	def Update(self, population):
-		self.sum_fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
-		self.population = population
-		self.population_size = 0
-		for individual in population:
+	def __FoundSpecies(self, obj_index, chromosome):
+		if self.__speciation_value[obj_index]  > chromosome.FitnessToMinimise[obj_index]:
+			self.Species[obj_index].Genes = chromosome.Genes
+			self.Species[obj_index].Length = chromosome.Length
+			self.Species[obj_index].Fitness = chromosome.Fitness
+			self.Species[obj_index].FitnessToMinimise = chromosome.FitnessToMinimise
+			self.Species[obj_index].ProblemType = chromosome.ProblemType
 
-			if self.FASTMODE:
-				distance = EuclideanDistanceFast(self.COMPARE_FITNESS, individual.Fitness)
-			else:
-				distance = EuclideanDistance(self.COMPARE_FITNESS, individual.Fitness)
+			self.__speciation_value[obj_index] = chromosome.FitnessToMinimise[obj_index]
 
-			if self.EuclideanBetter['Distance'] > distance:
-				self.EuclideanBetter['Distance'] = distance
-				self.EuclideanBetter['Genes'] = ''.join(individual.Genes)
-				self.EuclideanBetter['Fitness'] = individual.Fitness
+	def __MinDistanceFromSolutionCheck(self, chromosome):
+		if self.FASTMODE:
+			distance = EuclideanDistanceFast(self.OPTIMAL_FITNESS, chromosome.Fitness)
+		else:
+			distance = EuclideanDistance(self.OPTIMAL_FITNESS, chromosome.Fitness)
 
-			for i, (fitness, fitnessToMinimise) in enumerate(zip(individual.Fitness, individual.FitnessToMinimise)):
-				self.sum_fitness[i] = self.sum_fitness[i] + fitness
+		if self.__distance > distance:
+			self.__distance = distance
+			self.EuclideanBetter.Genes = chromosome.Genes
+			self.EuclideanBetter.Length = chromosome.Length
+			self.EuclideanBetter.Fitness = chromosome.Fitness
+			self.EuclideanBetter.FitnessToMinimise = chromosome.FitnessToMinimise
+			self.EuclideanBetter.ProblemType = chromosome.ProblemType
 
-				if self.best[i]['Value'] > fitnessToMinimise:
-					self.best[i]['Value'] = fitness
-					self.best[i]['Genes'] = ''.join(individual.Genes)
-					self.best[i]['Fitness'] = individual.Fitness
+	def __FoundParetoPoints(self, population):
+		CompareSet = []
+		for chromosome in population:
+			CompareSet.append(chromosome)
+		for chromosome in self.ParetoSet:
+			CompareSet.append(chromosome)
 
-			self.population_size = self.population_size + 1
+		# Python3 and pointer (EVERY TRICK IS A BUG)
+		#CompareSet = population # current population
+		#CompareSet += self.ParetoSet # old Pareto Set
 
-		for i, sum in enumerate(self.sum_fitness):
-			self.avg[i] = sum / self.population_size
-
-		CompareSet = population
-		CompareSet += self.ParetoSet
 		fitness = [item.FitnessToMinimise for item in CompareSet]
 		fitness = np.asarray(fitness, dtype = np.float64)
+
 		if self.FASTMODE:
 			nonDominatedable = IsNonDominatedableFast(fitness)
 		else:
 			nonDominatedable = IsNonDominatedable(fitness)
 
+		# Insert new points
 		self.ParetoSet = []
 		for i, (singleNonDominatedable, chromosome) in enumerate(zip(nonDominatedable, CompareSet)):
 			if singleNonDominatedable:
 				self.ParetoSet.append(chromosome)
+
+	def __UpdateCurrentPopulation(self, population):
+		self.population = population
+
+	def Update(self, population):
+		self.__UpdateCurrentPopulation(population)
+		#print(len(self.population))
+		# Set variables to calculate the average of each objective in current population
+		self.__sum_fitness = np.zeros((self.NUMBER_OBJECTIVE,), dtype = np.float64)
+		self.__population_size = 0
+
+		for individual in self.population:
+
+			self.__MinDistanceFromSolutionCheck(individual)
+
+			for i, (fitness, fitnessToMinimise) in enumerate(zip(individual.Fitness, individual.FitnessToMinimise)):
+				self.__sum_fitness[i] = self.__sum_fitness[i] + fitness
+
+				self.__FoundSpecies(i, individual)
+
+			# The population can be variable. It is better to prevent
+			self.__population_size = self.__population_size + 1
+
+		for i, sum in enumerate(self.__sum_fitness):
+			self.avg[i] = sum / self.__population_size
+
+		self.__FoundParetoPoints(population)
 
 		return self.ParetoSet
