@@ -27,7 +27,7 @@ When NumPy has been installed, NPGA can be installed using pip as follows:
 ```
 And later it is possible to import in code with:
 ```python
-import npga
+import npga as ga
 ```
 
 ## Methods
