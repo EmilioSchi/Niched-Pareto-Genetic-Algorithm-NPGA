@@ -1,5 +1,5 @@
 from setuptools import setup
-from NPGA import __version__
+from npga import __version__
 
 setup(
 	author = 'Emilio Schinina',
