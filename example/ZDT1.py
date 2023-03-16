@@ -1,5 +1,5 @@
 import math
-import NPGA
+import npga as ga
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -18,9 +18,9 @@ def graytodec(bin_list):
 		d += int(b) * (2**e)
 	return d
 
-def decodechromosome(bits, BitsForEachNumber, SizeVector):
-	x = np.zeros((SizeVector,), dtype = np.float64)
-	for i in range(SizeVector):
+def decodechromosome(bits, BitsForEachNumber, vector_size):
+	x = np.zeros((vector_size,), dtype = np.float64)
+	for i in range(vector_size):
 		dec = graytodec(bits[(i * BitsForEachNumber) : (i * BitsForEachNumber + BitsForEachNumber)])
 		max_current = math.pow(2, BitsForEachNumber) - 1
 		x[i] = scaleMinMax(dec, 0, max_current, 0, 1)
@@ -32,64 +32,44 @@ def ZDT1(x):
 	f2 = g * (1 - np.sqrt(x[0] / g))
 	return f1, f2
 
-def getfitness(candidate, BitsForEachNumber, SizeVector):
-	x = decodechromosome(candidate, BitsForEachNumber, SizeVector)
+def getfitness(candidate, BitsForEachNumber, vector_size):
+	x = decodechromosome(candidate, BitsForEachNumber, vector_size)
 	F1, F2 = ZDT1(x)
 	return [[F1, 'minimize'], [F2, 'minimize']]
 
-class StaticGen:
-	Generation = 1
-
 def display(statistics):
-	f1x = []
-	f2x = []
-	for point in statistics.ParetoSet:
-		f1x.append(point.Fitness[0])
-		f2x.append(point.Fitness[1])
+	f1x = [obj.fitness[0] for obj in statistics.pareto_front]
+	f2x = [obj.fitness[1] for obj in statistics.pareto_front]
 
-	xpop = []
-	ypop = []
-	for individual in statistics.population:
-		xpop.append(individual.Fitness[0])
-		ypop.append(individual.Fitness[1])
+	xpop = [obj.fitness[0] for obj in statistics.current_population]
+	ypop = [obj.fitness[1] for obj in statistics.current_population]
 
-
-	plt.figure(1)
-	plt.clf()
-	plt.axis([0, 1, 0, 4])
-	plt.xlabel('F1(x)')
-	plt.ylabel('F2(x)')
+	plt.figure(1); plt.clf()
+	plt.title('Zitzler-Deb-Thiele\'s function 1 ')
+	plt.xlabel('F1(x)'); plt.ylabel('F2(x)')
 	plt.plot(xpop, ypop, 'ko', label='individuals')
 	plt.plot(f1x, f2x, 'ro', label='pareto front')
-	plt.title('Zitzler-Deb-Thiele\'s function 1  -  GENERATION: ' + str(StaticGen.Generation))
-	plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=2)
-	plt.grid()
-	plt.draw()
-	plt.pause(0.0001)
-	plt.show(block=False)
+	plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), ncol=2)
+	plt.axis([0, 1, -1, 3]); plt.grid()
+	plt.draw(); plt.pause(0.00001); plt.show(block=False)
 
-	StaticGen.Generation = StaticGen.Generation + 1
+gene_set = '01'
+bits_foreach_number = 16
+vector_size = 30
+gene_len = [bits_foreach_number * vector_size]
 
-def test():
-	geneset = '01'
-	BitsForEachNumber = 16
-	SizeVector = 20
-	genelen = [BitsForEachNumber * SizeVector]
+def fnGetFitness(genes): return getfitness(genes, bits_foreach_number, vector_size)
 
-	def fnDisplay(statistic): display(statistic)
-	def fnGetFitness(genes): return getfitness(genes, BitsForEachNumber, SizeVector)
+algorithm = ga.Algorithm(fnGetFitness, [0, 0], 
+                gene_len,
+                chromosome_set = gene_set,
+                display_function = display,
+                population_size = 200,
+                max_generation = 4000, crossover_rate = 0.65,
+                mutation_rate = 1/170, niche_radius = 0.02,
+                candidate_size = 4, prc_tournament_size = 0.13,
+                multithread_mode = True)
 
-	optimalFitness = [0, 0]
+algorithm.run()
 
-	GA = NPGA.NichedParetoGeneticAlgorithm(
-							fnGetFitness, fnDisplay, optimalFitness,
-							geneset, genelen, population_size = 200,
-							max_generation = 400, crossover_rate = 0.65,
-							mutation_rate = 1/170, niche_radius = 0.02,
-							candidate_size = 4, prc_tournament_size = 0.13,
-							fastmode = True)
-	GA.Evolution()
-
-
-test()
 plt.show()

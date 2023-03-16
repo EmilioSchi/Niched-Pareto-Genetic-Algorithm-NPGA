@@ -1,4 +1,4 @@
-<p><img align="left" height="92" src="img/logo.png">
+<p><img src="img/logo.svn" alt="Alt text" height="92" style="vertical-align:middle" >
 <b><font size="20">Niched Pareto Genetic Algorithm</font></b></p>
 
 Genetic Algorithm (GA) for a  Multi-objective Optimization Problem (MOP)
@@ -23,37 +23,53 @@ When NumPy has been installed, NPGA can be installed using pip as follows:
 ```
 And later it is possible to import in code with:
 ```python
-import NPGA
+import npga
 ```
 
 ## Methods
 
 ### NichedParetoGeneticAlgorithm
 ```python
-NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosome_set, chromosome_length_set, population_size = 30, max_generation = 100, crossover_rate = 0.7, mutation_rate = 0.05, length_mutation_rate = 0, growth_rate = 0.5, shrink_rate = 0.5, prc_tournament_size = 0.1, candidate_size = 2, niche_radius = 1, fastmode = False, multithreadmode = False, fnMutation = None, fnCrossover = None, historyrecoverfitness = False)
+class Algorithm:
+    def __init__(
+        self,
+        objective_function: Callable,
+        optimal_fitness: float,
+        chromosome_length_set: List[int],
+        chromosome_set: str = '01',
+        display_function: Optional[Callable] = None,
+        population_size: int = 30,
+        max_generation: int = 100,
+        crossover_rate: float = 0.7,
+        mutation_rate: float = 0.05,
+        length_mutation_rate: float = 0,
+        growth_rate: float = 0.5,
+        shrink_rate: float = 0.5,
+        prc_tournament_size: float = 0.1,
+        candidate_size: int = 2,
+        niche_radius: float = 1,
+        multithread_mode: bool = False,
+        history_recover_fitness: bool = False
+    )
 ```
-#### Arguments
-- **fnGetFitness**: The fitness function to evaluate the solution domain.
-- **fnDisplay**: At the end of each generation it is possible call the dispay function to see the state of the algorithm and useful statistics.
-- **optimal_fitness**: The solution that wants to be reached.
-- **chromosome_set**: String. A set of characters used in chromosome.
-- **chromosome_length_set**: List of sizes that the chromosome can be assumed.
-- **population_size**: Integer. The number of individuals present in each generation.
-- **max_generation**: Integer. A maximum number of generation.
-- **crossover_rate**: Float between 0 and 1. Crossover probability says how often will be crossover performed. If there is a crossover, offspring is made from parts of parents' chromosome, otherwise, if there is no crossover, offspring is exact copy of parents. Crossover is made in hope that new chromosomes will have good parts of old chromosomes and maybe the new chromosomes will be better.
-- **mutation_rate**: Mutation probability says how often will be parts of chromosome mutated. If mutation is performed, part of chromosome is changed. Mutation is made to prevent falling GA into local extreme, but it should not occur very often, because then GA will in fact change to random search.
-- **length_mutation_rate**: Float between 0 and 1. Length Mutation probability says how often will be a change in size of chromosome. The lengths of both the parent chromosomes are checked and the chromosome whose length is smaller is taken as parent 1. If lengths of both the chromosomes are the same, the exchange doesn't happen. Then, two crossover points are picked randomly for the parent 1. The bits in between the two points are swapped between the parent.
-- **growth_rate**: In growth mutation the chromosome is enlarged.
-- **shrink_rate**: The purpose of shrink mutation is to reduce the length of the chromosome.
-- **prc_tournament_size**: Float between 0 and 1. The percentage of population that will form a comparison set in tournament selection.
-- **candidate_size**: The number of candidate chromosomes that can be select as parents.
-- **niche_radius**: Float. Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. The concept of Niche was introduced to ensure the diversity of individuals and prevent individuals converging into a narrow region of solution space, the range of niche is a spherical area. It is fixed by the user at some estimate of the minimal separation expected between the goal solutions.  
-- **fastmode**: Boolean. For many data points and problems to resolve it is useful set fastmode flag to True.
-- **multithreadmode**: Boolean.
-- **historyrecoverfitness**: Boolean. If a solution is already seen, the algorithm take the old value without compute the objective function.
-- **fnMutation**: It is possible to declare a custom Mutation function
-- **fnCrossover**: It is possible to declare a custom Crossover function
-
+#### Parameters
+- **objective_function** (function): The fitness function to evaluate the solution domain.
+- **display_function** (function, optional): At the end of each generation, it is possible to call the display function to see the state of the algorithm and useful statistics.
+- **optimal_fitness** (float): The solution that wants to be reached.
+- **chromosome_set** (str, optional): A set of characters used in the chromosome. Default is '01'.
+- **chromosome_length_set** (list): A list of sizes that the chromosome can be assumed.
+- **population_size** (int, optional): The number of individuals present in each generation. Default is 30.
+- **max_generation** (int, optional): A maximum number of generations. Default is 100.
+- **crossover_rate** (float, optional): Crossover probability, a float between 0 and 1, says how often crossover will be performed. Default is 0.7.
+- **mutation_rate** (float, optional): Mutation probability, a float between 0 and 1, says how often parts of the chromosome will be mutated. Default is 0.05.
+- **length_mutation_rate** (float, optional): Length Mutation probability, a float between 0 and 1, says how often a change in size of chromosome will occur. Default is 0.
+- **growth_rate** (float, optional): In growth mutation, the chromosome is enlarged. Default is 0.5.
+- **shrink_rate** (float, optional): The purpose of shrink mutation is to reduce the length of the chromosome. Default is 0.5.
+- **prc_tournament_size** (float, optional): The percentage of the population that will form a comparison set in tournament selection, a float between 0 and 1. Default is 0.1.
+- **candidate_size** (int, optional): The number of candidate chromosomes that can be selected as parents. Default is 2.
+- **niche_radius** (float, optional): Niche Radius is the distance threshold below which two individuals are considered similar enough to affect the niche count. Default is 1.
+- **multithread_mode** (bool, optional): Default is False.
+- **history_recover_fitness** (bool, optional): If a solution is already seen, the algorithm takes the old value without computing the objective function. Default is False
 ## Usage
 
 ### Define Fitness calculation function
@@ -77,19 +93,23 @@ NichedParetoGeneticAlgorithm(fnGetFitness, fnDisplay, optimal_fitness, chromosom
 
 ### Set parameters
 ```python
- geneset = '01'
- genelen = [64] # or genelen = [10, 12, 15] if there are more choromosome lengths
+ gene_set = '01'
+ gene_len = [64] # or gene_len = [10, 12, 15] if there are more choromosome lengths
  optimalFitness = [0, 0]
- GA = NPGA.NichedParetoGeneticAlgorithm(
- 	fnGetFitness, fnDisplay, optimalFitness,
- 	geneset, genelen, population_size = 20,
- 	max_generation = 30, crossover_rate = 0.7,
- 	mutation_rate = 0.05, niche_radius = 0.2,
- 	candidate_size = 2, prc_tournament_size = 0.2)
+
+ algorithm = ga.Algorithm(fnGetFitness, optimalFitness, 
+                gene_len,
+                chromosome_set = gene_set,
+                display_function = fnDisplay,
+                population_size = 200,
+                max_generation = 4000, crossover_rate = 0.65,
+                mutation_rate = 1/170, niche_radius = 0.02,
+                candidate_size = 4, prc_tournament_size = 0.13,
+                multithread_mode = True)
 ```
 ### Run
 ```python
-paretopoints = GA.Evolution()
+pareto_points = algorithm.run()
 ```
 
 ## Example
