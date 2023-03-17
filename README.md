@@ -4,9 +4,12 @@
   Niched Pareto Genetic Algorithm
   <br>
   Genetic Algorithm (GA) for a  Multi-objective Optimization Problem (MOP)
+
 </p>
 
-<br /><br /><br />
+[![Nature Paper](https://img.shields.io/badge/DOI-10.1109%2FICEC--1994--350037-blue)](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.4189&rep=rep1&type=pdf)
+
+
 ## Introduction
 To maintain multiple Pareto optimal solutions, Horn et all [1] have altered tournament selection. NPGA uses a tournament selection scheme based on Pareto dominance. Many (conventionally 2 candidates at once) individuals randomly chosen are compared against a subset from the entire population. When both competitors are either dominated or non dominated, the result of the tournament is decided through fitness sharing in the objective domain.
 
