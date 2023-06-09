@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Niched-Pareto-Genetic-Algorithm-NPGA &#8212; npga 0.3.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/haiku.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>npga 0.3.1 documentation</span></a></h1>
+        <h2 class="heading"><span>Niched-Pareto-Genetic-Algorithm-NPGA</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="niched-pareto-genetic-algorithm-npga">
+<h1>Niched-Pareto-Genetic-Algorithm-NPGA<a class="headerlink" href="#niched-pareto-genetic-algorithm-npga" title="Permalink to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="npga.html">npga</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#background-information">Background information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#license">License</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="npga.html#module-npga.algorithm">npga.algorithm module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm"><code class="docutils literal notranslate"><span class="pre">Algorithm</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm.__dict__"><code class="docutils literal notranslate"><span class="pre">Algorithm.__dict__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm.__init__"><code class="docutils literal notranslate"><span class="pre">Algorithm.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm.__module__"><code class="docutils literal notranslate"><span class="pre">Algorithm.__module__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm.__weakref__"><code class="docutils literal notranslate"><span class="pre">Algorithm.__weakref__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._add_solution_to_history_list"><code class="docutils literal notranslate"><span class="pre">Algorithm._add_solution_to_history_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._already_seen_solution"><code class="docutils literal notranslate"><span class="pre">Algorithm._already_seen_solution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._check_solution"><code class="docutils literal notranslate"><span class="pre">Algorithm._check_solution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._convert_maximize_to_minimize"><code class="docutils literal notranslate"><span class="pre">Algorithm._convert_maximize_to_minimize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._crossover_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._crossover_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._evaluation"><code class="docutils literal notranslate"><span class="pre">Algorithm._evaluation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._fitness_sharing"><code class="docutils literal notranslate"><span class="pre">Algorithm._fitness_sharing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._generation_initial_population"><code class="docutils literal notranslate"><span class="pre">Algorithm._generation_initial_population()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._growth_mutation_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._growth_mutation_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._length_mutation_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._length_mutation_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._multithread_evaluation"><code class="docutils literal notranslate"><span class="pre">Algorithm._multithread_evaluation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._mutation_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._mutation_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._niched_count_calculation"><code class="docutils literal notranslate"><span class="pre">Algorithm._niched_count_calculation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._objective_function_thread"><code class="docutils literal notranslate"><span class="pre">Algorithm._objective_function_thread()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._pareto_domination_tournment"><code class="docutils literal notranslate"><span class="pre">Algorithm._pareto_domination_tournment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._selection_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._selection_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm._shrink_mutation_operation"><code class="docutils literal notranslate"><span class="pre">Algorithm._shrink_mutation_operation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Algorithm.run"><code class="docutils literal notranslate"><span class="pre">Algorithm.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome"><code class="docutils literal notranslate"><span class="pre">Chromosome</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome.__dict__"><code class="docutils literal notranslate"><span class="pre">Chromosome.__dict__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome.__init__"><code class="docutils literal notranslate"><span class="pre">Chromosome.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome.__module__"><code class="docutils literal notranslate"><span class="pre">Chromosome.__module__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome.__str__"><code class="docutils literal notranslate"><span class="pre">Chromosome.__str__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Chromosome.__weakref__"><code class="docutils literal notranslate"><span class="pre">Chromosome.__weakref__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#npga.algorithm.Statistics"><code class="docutils literal notranslate"><span class="pre">Statistics</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.__dict__"><code class="docutils literal notranslate"><span class="pre">Statistics.__dict__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.__init__"><code class="docutils literal notranslate"><span class="pre">Statistics.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.__module__"><code class="docutils literal notranslate"><span class="pre">Statistics.__module__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.__str__"><code class="docutils literal notranslate"><span class="pre">Statistics.__str__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.__weakref__"><code class="docutils literal notranslate"><span class="pre">Statistics.__weakref__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics._found_pareto_points"><code class="docutils literal notranslate"><span class="pre">Statistics._found_pareto_points()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics._found_solution_with_min_distance"><code class="docutils literal notranslate"><span class="pre">Statistics._found_solution_with_min_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm.Statistics.update"><code class="docutils literal notranslate"><span class="pre">Statistics.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="npga.html#npga.algorithm._Utility"><code class="docutils literal notranslate"><span class="pre">_Utility</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility.__dict__"><code class="docutils literal notranslate"><span class="pre">_Utility.__dict__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility.__module__"><code class="docutils literal notranslate"><span class="pre">_Utility.__module__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility.__weakref__"><code class="docutils literal notranslate"><span class="pre">_Utility.__weakref__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility._euclidean_distance"><code class="docutils literal notranslate"><span class="pre">_Utility._euclidean_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility._flip_coin"><code class="docutils literal notranslate"><span class="pre">_Utility._flip_coin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="npga.html#npga.algorithm._Utility._is_non_dominatedable"><code class="docutils literal notranslate"><span class="pre">_Utility._is_non_dominatedable()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+</ul>
+</div>
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Emilio Schinina.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.1.3.
+    </div>
+  </body>
+</html>

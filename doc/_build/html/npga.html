@@ -1,0 +1,566 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>npga &#8212; npga 0.3.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/haiku.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>npga 0.3.1 documentation</span></a></h1>
+        <h2 class="heading"><span>npga</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <span class="target" id="module-npga"></span><section id="npga">
+<h1>npga<a class="headerlink" href="#npga" title="Permalink to this heading">¶</a></h1>
+<p>Niched Pareto Genetic Algorithm (npga)</p>
+<p>NPGA is used to optimize problems with multiple objectives to
+provide a set of non-dominated solutions, also known as the
+Pareto-optimal set, which represents the best possible trade-offs between
+the multiple objectives in the optimization problem.</p>
+<section id="background-information">
+<h2>Background information<a class="headerlink" href="#background-information" title="Permalink to this heading">¶</a></h2>
+<p>The algorithm can be summarized in the following steps:</p>
+<ol class="arabic simple">
+<li><p>Initialization: Create an initial population of candidate solutions randomly.</p></li>
+<li><dl class="simple">
+<dt>Evaluate fitness: Evaluate the fitness of each candidate solution based on</dt><dd><p>the objective functions and any constraints.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Selection: Select the best individuals in the population for reproduction</dt><dd><p>using a selection method, such as tournament selection.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Crossover: Use crossover to create offspring solutions from the selected</dt><dd><p>individuals. The crossover operator combines the genetic material
+of two individuals to create a new one.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Mutation: Apply a mutation operator to introduce random changes to the</dt><dd><p>offspring solutions.</p>
+</dd>
+</dl>
+</li>
+<li><p>Evaluate fitness: Evaluate the fitness of the offspring solutions.</p></li>
+<li><dl class="simple">
+<dt>Niching: Apply a niching mechanism to encourage the population to spread out</dt><dd><p>in the search space and avoid clustering in a few regions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Replacement: Replace the least fit individuals in the population with the</dt><dd><p>new offspring solutions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Termination: Check the termination criterion to determine if the algorithm</dt><dd><p>should stop. If not, go back to step 3.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Pareto front: After the algorithm has terminated, the final result is a set</dt><dd><p>of non-dominated solutions that represent the Pareto front of
+the optimization problem.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<p>The steps of NPGA are similar to those of other genetic algorithms, but with
+the addition of the niching mechanism to maintain diversity in the population.
+By following these steps, developers can use NPGA to find a set of
+non-dominated solutions that provide trade-offs between multiple objectives in
+an optimization problem.</p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
+<p>Author: Emilio Schinina’ &lt;<a class="reference external" href="mailto:emilioschi&#37;&#52;&#48;gmail&#46;com">emilioschi<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;
+Copyright (C) 2019, 2023 Emilio Schinina’</p>
+<p>Licensed under the Apache Lic ense, Version 2.0 (the “License”);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<blockquote>
+<div><p><a class="reference external" href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></p>
+</div></blockquote>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+</section>
+</section>
+<section id="module-npga.algorithm">
+<span id="npga-algorithm-module"></span><h1>npga.algorithm module<a class="headerlink" href="#module-npga.algorithm" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">npga.algorithm.</span></span><span class="sig-name descname"><span class="pre">Algorithm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objective_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimal_fitness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chromosome_length_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chromosome_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'01'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_generation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossover_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mutation_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_mutation_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shrink_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prc_tournament_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">niche_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multithread_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history_recover_fitness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'npga.algorithm',</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm.__init__&gt;,</span> <span class="pre">'_add_solution_to_history_list':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._add_solution_to_history_list&gt;,</span> <span class="pre">'_already_seen_solution':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._already_seen_solution&gt;,</span> <span class="pre">'_objective_function_thread':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._objective_function_thread&gt;,</span> <span class="pre">'_check_solution':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._check_solution&gt;,</span> <span class="pre">'_convert_maximize_to_minimize':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._convert_maximize_to_minimize&gt;,</span> <span class="pre">'_multithread_evaluation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._multithread_evaluation&gt;,</span> <span class="pre">'_evaluation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._evaluation&gt;,</span> <span class="pre">'_pareto_domination_tournment':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._pareto_domination_tournment&gt;,</span> <span class="pre">'_fitness_sharing':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._fitness_sharing&gt;,</span> <span class="pre">'_niched_count_calculation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._niched_count_calculation&gt;,</span> <span class="pre">'_selection_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._selection_operation&gt;,</span> <span class="pre">'_generation_initial_population':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._generation_initial_population&gt;,</span> <span class="pre">'_shrink_mutation_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._shrink_mutation_operation&gt;,</span> <span class="pre">'_growth_mutation_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._growth_mutation_operation&gt;,</span> <span class="pre">'_length_mutation_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._length_mutation_operation&gt;,</span> <span class="pre">'_mutation_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._mutation_operation&gt;,</span> <span class="pre">'_crossover_operation':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm._crossover_operation&gt;,</span> <span class="pre">'run':</span> <span class="pre">&lt;function</span> <span class="pre">Algorithm.run&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'Algorithm'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'Algorithm'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__doc__':</span> <span class="pre">None,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#npga.algorithm.Algorithm.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objective_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimal_fitness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chromosome_length_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chromosome_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'01'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_generation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossover_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mutation_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_mutation_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shrink_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prc_tournament_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">niche_radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multithread_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history_recover_fitness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the Niched Pareto Genetic Algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objective_function</strong> (<em>function</em>) – The fitness function to evaluate the solution domain.</p></li>
+<li><p><strong>display_function</strong> (<em>function</em>) – At the end of each generation, it is possible to call the display
+function to see the state of the algorithm and useful statistics.</p></li>
+<li><p><strong>optimal_fitness</strong> (<em>float</em>) – The solution that wants to be reached.</p></li>
+<li><p><strong>chromosome_set</strong> (<em>str</em>) – A set of characters used in the chromosome.</p></li>
+<li><p><strong>chromosome_length_set</strong> (<em>list</em>) – A list of sizes that the chromosome can be assumed.</p></li>
+<li><p><strong>population_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of individuals present in each generation, by default 30.</p></li>
+<li><p><strong>max_generation</strong> (<em>int</em><em>, </em><em>optional</em>) – A maximum number of generations, by default 100.</p></li>
+<li><p><strong>crossover_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Crossover probability, a float between 0 and 1, says how often
+crossover will be performed. If there is a crossover,
+offspring is made from parts of the parents’ chromosome, otherwise,
+if there is no crossover, offspring is an exact copy of the parents.
+Crossover is made in hope that new chromosomes will have good parts
+of old chromosomes and maybe the new chromosomes will be better,
+by default 0.7.</p></li>
+<li><p><strong>mutation_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Mutation probability, a float between 0 and 1, says how often parts
+of the chromosome will be mutated. If mutation is performed, part
+of the chromosome is changed. Mutation is made to prevent the GA
+from falling into a local extreme, but it should not occur very
+often, because then the GA will in fact change to a random search,
+by default 0.05.</p></li>
+<li><p><strong>length_mutation_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – Length Mutation probability, a float between 0 and 1, says how
+often a change in size of chromosome will occur. The lengths of
+both the parent chromosomes are checked and the chromosome whose
+length is smaller is taken as parent 1. If the lengths of both the
+chromosomes are the same, the exchange doesn’t happen. Then, two
+crossover points are picked randomly for the parent 1.
+The bits in between the two points are swapped between the parent,
+by default 0.</p></li>
+<li><p><strong>growth_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – In growth mutation, the chromosome is enlarged, by default 0.5.</p></li>
+<li><p><strong>shrink_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – The purpose of shrink mutation is to reduce the length of the
+chromosome, by default 0.5.</p></li>
+<li><p><strong>prc_tournament_size</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the population that will form a comparison set in
+tournament selection, a float between 0 and 1, by default 0.1.</p></li>
+<li><p><strong>candidate_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of candidate chromosomes that can be selected as
+parents, by default 2.</p></li>
+<li><p><strong>niche_radius</strong> (<em>float</em><em>, </em><em>optional</em>) – Niche Radius is the distance threshold below which two individuals
+are considered similar enough to affect the niche count.
+The concept of Niche was introduced to ensure the diversity of
+individuals and prevent individuals converging into a narrow region
+of solution space, the range of niche is a spherical area. It is
+fixed by the user at some estimate of the minimal separation
+expected between the goal solutions, by default 1.</p></li>
+<li><p><strong>multithread_mode</strong> (<em>bool</em><em>, </em><em>optional</em>) – By default False.</p></li>
+<li><p><strong>history_recover_fitness</strong> (<em>bool</em><em>, </em><em>optional</em>) – If a solution is already seen, the algorithm takes the old value
+without computing the objective function, by default False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'npga.algorithm'</span></em><a class="headerlink" href="#npga.algorithm.Algorithm.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#npga.algorithm.Algorithm.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._add_solution_to_history_list">
+<span class="sig-name descname"><span class="pre">_add_solution_to_history_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitnessfominimise</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._add_solution_to_history_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._add_solution_to_history_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._already_seen_solution">
+<span class="sig-name descname"><span class="pre">_already_seen_solution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._already_seen_solution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._already_seen_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._check_solution">
+<span class="sig-name descname"><span class="pre">_check_solution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._check_solution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._check_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._convert_maximize_to_minimize">
+<span class="sig-name descname"><span class="pre">_convert_maximize_to_minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._convert_maximize_to_minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._convert_maximize_to_minimize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._crossover_operation">
+<span class="sig-name descname"><span class="pre">_crossover_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._crossover_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._crossover_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two points on both parents’ chromosomes is picked randomly, and
+designated ‘crossover points’. This results in
+two offspring, each carrying some genetic information from both parents.</p>
+<p>Crossover probability says how often will be crossover performed.
+If there is no crossover, offspring is exact copy of parents.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._evaluation">
+<span class="sig-name descname"><span class="pre">_evaluation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._evaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._evaluation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the fitness of each candidate solution based on
+the objective functions and any constraints.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._fitness_sharing">
+<span class="sig-name descname"><span class="pre">_fitness_sharing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidate_indexes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._fitness_sharing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._fitness_sharing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies fitness sharing to the candidates in <cite>candidate_indexes</cite>,
+which are assumed to belong to the same niche.</p>
+<p>Fitness sharing is a mechanism that encourages diversity by
+penalizing the fitness of similar solutions. In this
+implementation, the fitness of each candidate is divided by
+the sum of the niche counts of all candidates that are
+within a certain distance from it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>(</strong><strong>array-like</strong><strong>)</strong> (<em>candidate_indexes</em>) – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Chromosome</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The selected candidate, which has the smallest niche count.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._generation_initial_population">
+<span class="sig-name descname"><span class="pre">_generation_initial_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._generation_initial_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._generation_initial_population" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._growth_mutation_operation">
+<span class="sig-name descname"><span class="pre">_growth_mutation_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._growth_mutation_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._growth_mutation_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Growth mutation is a type of mutation operation that
+increases the magnitude of the gene values.</p>
+<p>The operation is performed by adding a random value
+to the gene value, with the magnitude of the random
+value proportional to the magnitude of the gene value.</p>
+<p>This operation can be used to increase the size of
+small gene values and to allow the search to explore
+new regions of the search space.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._length_mutation_operation">
+<span class="sig-name descname"><span class="pre">_length_mutation_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._length_mutation_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._length_mutation_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation can be used to increase or to reduce the size of
+gene values to allow the search to explore new regions of the search
+space.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._multithread_evaluation">
+<span class="sig-name descname"><span class="pre">_multithread_evaluation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._multithread_evaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._multithread_evaluation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit a new task to the thread pool for each
+chromosome in the population</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._mutation_operation">
+<span class="sig-name descname"><span class="pre">_mutation_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._mutation_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._mutation_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mutation consists of the variation of a randomly chosen bit,
+belonging to a randomly selected string.</p>
+<p>If there is no mutation, offspring is taken without any change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._niched_count_calculation">
+<span class="sig-name descname"><span class="pre">_niched_count_calculation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cadidate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._niched_count_calculation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._niched_count_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The niche count is initialized to zero, and is updated
+foreach near neighbor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._objective_function_thread">
+<span class="sig-name descname"><span class="pre">_objective_function_thread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queue</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._objective_function_thread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._objective_function_thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._pareto_domination_tournment">
+<span class="sig-name descname"><span class="pre">_pareto_domination_tournment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._pareto_domination_tournment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._pareto_domination_tournment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Few candidate chromosomes and a comparison set, of size t_dom, of
+chromosomes are chosen for selection at random from the population.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._selection_operation">
+<span class="sig-name descname"><span class="pre">_selection_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._selection_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._selection_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selection maintains diversity in the population and
+ensures that the best chromosomes are passed on to the next generation.</p>
+<p>A small number of chromosomes are selected at random
+from the population, and the best chromosome among
+the selected chromosomes is chosen for the next generation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm._shrink_mutation_operation">
+<span class="sig-name descname"><span class="pre">_shrink_mutation_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm._shrink_mutation_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm._shrink_mutation_operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shrink mutation is a type of mutation operation that
+reduces the magnitude of the gene values.</p>
+<p>The operation is performed by subtracting a random
+value from the gene value, with the magnitude of the
+random value proportional to the magnitude of the gene value.</p>
+<p>This operation can be used to reduce the size of
+large gene values and to prevent the search from
+getting stuck in large, but suboptimal, regions of the search space.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Algorithm.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Algorithm.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Algorithm.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main function of the genetic algorithm that
+initializes the population and uses selection,
+crossover, and mutation to find optimal solutions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of solutions belonging to the Pareto front.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pareto_solutions</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">npga.algorithm.</span></span><span class="sig-name descname"><span class="pre">Chromosome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness_to_minimize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Chromosome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Chromosome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'npga.algorithm',</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">Chromosome.__init__&gt;,</span> <span class="pre">'__str__':</span> <span class="pre">&lt;function</span> <span class="pre">Chromosome.__str__&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'Chromosome'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'Chromosome'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__doc__':</span> <span class="pre">None,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#npga.algorithm.Chromosome.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitness_to_minimize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Chromosome.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Chromosome.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a new Chromosome object.</p>
+<p>Each <cite>Chromosome</cite> object contains a set of genes that represent the
+solution candidate, along with its fitness values, dimension, and
+problem type. The fitness value is a measure of how good the solution
+candidate is in solving the problem, and can be used to select
+chromosomes for the next generation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genes</strong> (<em>list</em>) – A list of genes that represent the genetic code of the chromosome.</p></li>
+<li><p><strong>dimension</strong> (<em>int</em>) – The length of the chromosome.</p></li>
+<li><p><strong>fitness</strong> – The fitness value of the chromosome. Defaults to -1.</p></li>
+<li><p><strong>fitness_to_minimize</strong> – The fitness value of the chromosome in minimizing the problem.
+Defaults to -1.</p></li>
+<li><p><strong>problem_type</strong> (<em>str</em><em>, </em><em>optional</em>) – </p></li>
+<li><p><strong>''.</strong> (<em>The type</em><em> of </em><em>problem that the chromosome is solving. Defaults to</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'npga.algorithm'</span></em><a class="headerlink" href="#npga.algorithm.Chromosome.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Chromosome.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Chromosome.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string representation of the Chromosome object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>str</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A string that summarizes the chromosome’s attributes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Chromosome.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#npga.algorithm.Chromosome.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">npga.algorithm.</span></span><span class="sig-name descname"><span class="pre">Statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimal_fitness</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'npga.algorithm',</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">Statistics.__init__&gt;,</span> <span class="pre">'__str__':</span> <span class="pre">&lt;function</span> <span class="pre">Statistics.__str__&gt;,</span> <span class="pre">'_found_solution_with_min_distance':</span> <span class="pre">&lt;function</span> <span class="pre">Statistics._found_solution_with_min_distance&gt;,</span> <span class="pre">'_found_pareto_points':</span> <span class="pre">&lt;function</span> <span class="pre">Statistics._found_pareto_points&gt;,</span> <span class="pre">'update':</span> <span class="pre">&lt;function</span> <span class="pre">Statistics.update&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'Statistics'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'Statistics'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__doc__':</span> <span class="pre">None,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#npga.algorithm.Statistics.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimal_fitness</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'npga.algorithm'</span></em><a class="headerlink" href="#npga.algorithm.Statistics.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#npga.algorithm.Statistics.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics._found_pareto_points">
+<span class="sig-name descname"><span class="pre">_found_pareto_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics._found_pareto_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics._found_pareto_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add non-dominated solutions in the given population to the Pareto set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>population</strong> (<em>list</em>) – A list of chromosomes, each representing a
+solution to the optimization problem.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics._found_solution_with_min_distance">
+<span class="sig-name descname"><span class="pre">_found_solution_with_min_distance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics._found_solution_with_min_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics._found_solution_with_min_distance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm.Statistics.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#Statistics.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm.Statistics.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="npga.algorithm._Utility">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">npga.algorithm.</span></span><span class="sig-name descname"><span class="pre">_Utility</span></span><a class="reference internal" href="_modules/npga/algorithm.html#_Utility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm._Utility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm._Utility.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'npga.algorithm',</span> <span class="pre">'_is_non_dominatedable':</span> <span class="pre">&lt;staticmethod(&lt;function</span> <span class="pre">_Utility._is_non_dominatedable&gt;)&gt;,</span> <span class="pre">'_euclidean_distance':</span> <span class="pre">&lt;staticmethod(&lt;function</span> <span class="pre">_Utility._euclidean_distance&gt;)&gt;,</span> <span class="pre">'_flip_coin':</span> <span class="pre">&lt;staticmethod(&lt;function</span> <span class="pre">_Utility._flip_coin&gt;)&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'_Utility'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'_Utility'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__doc__':</span> <span class="pre">None,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#npga.algorithm._Utility.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm._Utility.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'npga.algorithm'</span></em><a class="headerlink" href="#npga.algorithm._Utility.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="npga.algorithm._Utility.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#npga.algorithm._Utility.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm._Utility._euclidean_distance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_euclidean_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#_Utility._euclidean_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm._Utility._euclidean_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Euclidean distance between two points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point_1</strong> (<em>numpy.ndarray</em>) – A 1D array representing the first point.</p></li>
+<li><p><strong>point_2</strong> (<em>numpy.ndarray</em>) – A 1D array representing the second point.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Euclidean distance between the two points.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm._Utility._flip_coin">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_flip_coin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">probability</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#_Utility._flip_coin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm._Utility._flip_coin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate a coin flip with the specified probability
+of landing heads.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>probability</strong> (<em>float</em>) – The probability of landing heads on a single coin flip.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the coin lands heads, False if it lands tails.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="npga.algorithm._Utility._is_non_dominatedable">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_non_dominatedable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">costs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/npga/algorithm.html#_Utility._is_non_dominatedable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#npga.algorithm._Utility._is_non_dominatedable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the pareto-efficient points</p>
+<p>If return_mask is True, this will be an (n_points, ) boolean array
+Otherwise it will be a (n_efficient_points, ) integer array of indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>costs</strong> – An (n_points, n_costs) array</p></li>
+<li><p><strong>return_mask</strong> – True to return a mask</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array of indices of pareto-efficient points.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>non_dominatedable</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Emilio Schinina.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.1.3.
+    </div>
+  </body>
+</html>

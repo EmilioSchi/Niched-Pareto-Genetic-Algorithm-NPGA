@@ -1,0 +1,965 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>npga.algorithm &#8212; npga 0.3.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for npga.algorithm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># File: algorithm.py</span>
+<span class="c1"># Niched Pareto Genetic Algorithm (npga)</span>
+<span class="c1">#</span>
+<span class="c1"># Author: Emilio Schinina&#39; &lt;emilioschi@gmail.com&gt;</span>
+<span class="c1"># Copyright (C) 2019, 2023 Emilio Schinina&#39;</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">concurrent.futures</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="k">class</span> <span class="nc">_Utility</span><span class="p">:</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_is_non_dominatedable</span><span class="p">(</span><span class="n">costs</span><span class="p">,</span> <span class="n">return_mask</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the pareto-efficient points</span>
+
+<span class="sd">        If return_mask is True, this will be an (n_points, ) boolean array</span>
+<span class="sd">        Otherwise it will be a (n_efficient_points, ) integer array of indices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        costs</span>
+<span class="sd">            An (n_points, n_costs) array</span>
+<span class="sd">        return_mask</span>
+<span class="sd">            True to return a mask</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        non_dominatedable</span>
+<span class="sd">            An array of indices of pareto-efficient points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">non_dominatedable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">points_number</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Next index in the non_dominatedable array to search for</span>
+        <span class="n">next_point_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">next_point_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">costs</span><span class="p">):</span>
+            <span class="n">non_dominated_point_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">costs</span> <span class="o">&lt;</span> <span class="n">costs</span><span class="p">[</span><span class="n">next_point_index</span><span class="p">],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">non_dominated_point_mask</span><span class="p">[</span><span class="n">next_point_index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Remove dominated points</span>
+            <span class="n">non_dominatedable</span> <span class="o">=</span> <span class="n">non_dominatedable</span><span class="p">[</span><span class="n">non_dominated_point_mask</span><span class="p">]</span>
+            <span class="n">costs</span> <span class="o">=</span> <span class="n">costs</span><span class="p">[</span><span class="n">non_dominated_point_mask</span><span class="p">]</span>
+            <span class="n">next_point_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">non_dominated_point_mask</span><span class="p">[:</span><span class="n">next_point_index</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">return_mask</span><span class="p">:</span>
+            <span class="n">non_dominatedable_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">points_number</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">)</span>
+            <span class="n">non_dominatedable_mask</span><span class="p">[</span><span class="n">non_dominatedable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">non_dominatedable_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">non_dominatedable</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_euclidean_distance</span><span class="p">(</span><span class="n">point_1</span><span class="p">,</span> <span class="n">point_2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the Euclidean distance between two points.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point_1 : numpy.ndarray</span>
+<span class="sd">            A 1D array representing the first point.</span>
+<span class="sd">        point_2 : numpy.ndarray</span>
+<span class="sd">            A 1D array representing the second point.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The Euclidean distance between the two points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">point_1</span> <span class="o">-</span> <span class="n">point_2</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distance</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_flip_coin</span><span class="p">(</span><span class="n">probability</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulate a coin flip with the specified probability </span>
+<span class="sd">        of landing heads.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        probability : float</span>
+<span class="sd">            The probability of landing heads on a single coin flip.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the coin lands heads, False if it lands tails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">probability</span>
+
+<div class="viewcode-block" id="Statistics"><a class="viewcode-back" href="../../npga.html#npga.algorithm.Statistics">[docs]</a><span class="k">class</span> <span class="nc">Statistics</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimal_fitness</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_population</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pareto_front</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span> <span class="o">=</span> <span class="n">optimal_fitness</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_euclidean_chromosome</span> <span class="o">=</span> <span class="n">Chromosome</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Best Euclidean solution:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">best_euclidean_chromosome</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_found_solution_with_min_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># Loop through each chromosome in the current population.</span>
+        <span class="k">for</span> <span class="n">chromosome</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto_front</span><span class="p">:</span>
+
+            <span class="c1"># Calculate the Euclidean distance between the </span>
+            <span class="c1"># chromosome&#39;s fitness and the optimal fitness.</span>
+            <span class="n">distance_calculated</span> <span class="o">=</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_euclidean_distance</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span><span class="p">,</span> <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+
+            <span class="c1"># Initialize the best distance to the highest number.</span>
+            <span class="n">best_distance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+
+            <span class="c1"># If the current distance is better than the best distance found </span>
+            <span class="c1"># so far, update the best distance and set the best Euclidean </span>
+            <span class="c1"># chromosome to be the current chromosome.</span>
+            <span class="k">if</span> <span class="n">best_distance</span> <span class="o">&gt;</span> <span class="n">distance_calculated</span><span class="p">:</span>
+                <span class="n">best_distance</span> <span class="o">=</span> <span class="n">distance_calculated</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">best_euclidean_chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
+
+    <span class="k">def</span> <span class="nf">_found_pareto_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add non-dominated solutions in the given population to the Pareto set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        population : list</span>
+<span class="sd">            A list of chromosomes, each representing a </span>
+<span class="sd">            solution to the optimization problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">compare</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">compare</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+        <span class="n">compare</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pareto_front</span><span class="p">)</span>
+
+        <span class="n">fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">fitness_to_minimize</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">compare</span><span class="p">]</span> \
+                             <span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="n">non_dominatedable</span> <span class="o">=</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_is_non_dominatedable</span><span class="p">(</span><span class="n">fitness</span><span class="p">)</span>
+
+        <span class="c1"># Update the pareto front adding new points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pareto_front</span> <span class="o">=</span> <span class="p">[</span><span class="n">chromosome</span> \
+                             <span class="k">for</span> <span class="n">single_non_dominatedable</span><span class="p">,</span> <span class="n">chromosome</span> \
+                             <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">non_dominatedable</span><span class="p">,</span> <span class="n">compare</span><span class="p">)</span> \
+                             <span class="k">if</span> <span class="n">single_non_dominatedable</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Statistics.update"><a class="viewcode-back" href="../../npga.html#npga.algorithm.Statistics.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="c1"># Update current population</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_population</span> <span class="o">=</span> <span class="n">population</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_found_pareto_points</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_found_solution_with_min_distance</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pareto_front</span></div></div>
+
+<div class="viewcode-block" id="Chromosome"><a class="viewcode-back" href="../../npga.html#npga.algorithm.Chromosome">[docs]</a><span class="k">class</span> <span class="nc">Chromosome</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">genes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dimension</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fitness</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> 
+                 <span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a new Chromosome object.</span>
+
+<span class="sd">        Each `Chromosome` object contains a set of genes that represent the </span>
+<span class="sd">        solution candidate, along with its fitness values, dimension, and </span>
+<span class="sd">        problem type. The fitness value is a measure of how good the solution </span>
+<span class="sd">        candidate is in solving the problem, and can be used to select </span>
+<span class="sd">        chromosomes for the next generation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        genes : list</span>
+<span class="sd">            A list of genes that represent the genetic code of the chromosome.</span>
+<span class="sd">        dimension : int</span>
+<span class="sd">            The length of the chromosome.</span>
+<span class="sd">        fitness</span>
+<span class="sd">            The fitness value of the chromosome. Defaults to -1.</span>
+<span class="sd">        fitness_to_minimize</span>
+<span class="sd">            The fitness value of the chromosome in minimizing the problem.</span>
+<span class="sd">            Defaults to -1.</span>
+<span class="sd">        problem_type : str, optional</span>
+<span class="sd">        The type of problem that the chromosome is solving. Defaults to &#39;&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Store the genetic code as a string, </span>
+        <span class="c1"># the length, the fitness value of the chromosome</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">fitness</span>
+
+        <span class="c1"># If the problem is a maximization problem, store the negation of </span>
+        <span class="c1"># the fitness value as the fitness to minimize</span>
+        <span class="c1"># If the problem is a minimization problem, store the </span>
+        <span class="c1"># fitness value as the fitness to minimize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="n">fitness_to_minimize</span>
+
+        <span class="c1"># There is the possibility that in case we want to switch</span>
+        <span class="c1"># the problem type in runtime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">problem_type</span> <span class="o">=</span> <span class="n">problem_type</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a string representation of the Chromosome object.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str: A string that summarizes the chromosome&#39;s attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chromosome with genes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Dimension: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Fitness: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Fitness to minimize: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness_to_minimize</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Problem type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Algorithm"><a class="viewcode-back" href="../../npga.html#npga.algorithm.Algorithm">[docs]</a><span class="k">class</span> <span class="nc">Algorithm</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">objective_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">optimal_fitness</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">chromosome_length_set</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">chromosome_set</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span>
+        <span class="n">display_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">population_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+        <span class="n">max_generation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">crossover_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">mutation_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">length_mutation_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">growth_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">shrink_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">prc_tournament_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">candidate_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="n">niche_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">multithread_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">history_recover_fitness</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Niched Pareto Genetic Algorithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        objective_function : function</span>
+<span class="sd">            The fitness function to evaluate the solution domain.</span>
+<span class="sd">        display_function : function</span>
+<span class="sd">            At the end of each generation, it is possible to call the display </span>
+<span class="sd">            function to see the state of the algorithm and useful statistics.</span>
+<span class="sd">        optimal_fitness : float</span>
+<span class="sd">            The solution that wants to be reached.</span>
+<span class="sd">        chromosome_set : str</span>
+<span class="sd">            A set of characters used in the chromosome.</span>
+<span class="sd">        chromosome_length_set : list</span>
+<span class="sd">            A list of sizes that the chromosome can be assumed.</span>
+<span class="sd">        population_size : int, optional</span>
+<span class="sd">            The number of individuals present in each generation, by default 30.</span>
+<span class="sd">        max_generation : int, optional</span>
+<span class="sd">            A maximum number of generations, by default 100.</span>
+<span class="sd">        crossover_rate : float, optional</span>
+<span class="sd">            Crossover probability, a float between 0 and 1, says how often </span>
+<span class="sd">            crossover will be performed. If there is a crossover, </span>
+<span class="sd">            offspring is made from parts of the parents&#39; chromosome, otherwise, </span>
+<span class="sd">            if there is no crossover, offspring is an exact copy of the parents.</span>
+<span class="sd">            Crossover is made in hope that new chromosomes will have good parts </span>
+<span class="sd">            of old chromosomes and maybe the new chromosomes will be better, </span>
+<span class="sd">            by default 0.7.</span>
+<span class="sd">        mutation_rate : float, optional</span>
+<span class="sd">            Mutation probability, a float between 0 and 1, says how often parts </span>
+<span class="sd">            of the chromosome will be mutated. If mutation is performed, part </span>
+<span class="sd">            of the chromosome is changed. Mutation is made to prevent the GA </span>
+<span class="sd">            from falling into a local extreme, but it should not occur very </span>
+<span class="sd">            often, because then the GA will in fact change to a random search, </span>
+<span class="sd">            by default 0.05.</span>
+<span class="sd">        length_mutation_rate : float, optional</span>
+<span class="sd">            Length Mutation probability, a float between 0 and 1, says how </span>
+<span class="sd">            often a change in size of chromosome will occur. The lengths of </span>
+<span class="sd">            both the parent chromosomes are checked and the chromosome whose </span>
+<span class="sd">            length is smaller is taken as parent 1. If the lengths of both the </span>
+<span class="sd">            chromosomes are the same, the exchange doesn&#39;t happen. Then, two </span>
+<span class="sd">            crossover points are picked randomly for the parent 1. </span>
+<span class="sd">            The bits in between the two points are swapped between the parent, </span>
+<span class="sd">            by default 0.</span>
+<span class="sd">        growth_rate : float, optional</span>
+<span class="sd">            In growth mutation, the chromosome is enlarged, by default 0.5.</span>
+<span class="sd">        shrink_rate : float, optional</span>
+<span class="sd">            The purpose of shrink mutation is to reduce the length of the </span>
+<span class="sd">            chromosome, by default 0.5.</span>
+<span class="sd">        prc_tournament_size : float, optional</span>
+<span class="sd">            The percentage of the population that will form a comparison set in </span>
+<span class="sd">            tournament selection, a float between 0 and 1, by default 0.1.</span>
+<span class="sd">        candidate_size : int, optional</span>
+<span class="sd">            The number of candidate chromosomes that can be selected as </span>
+<span class="sd">            parents, by default 2.</span>
+<span class="sd">        niche_radius : float, optional</span>
+<span class="sd">            Niche Radius is the distance threshold below which two individuals </span>
+<span class="sd">            are considered similar enough to affect the niche count. </span>
+<span class="sd">            The concept of Niche was introduced to ensure the diversity of </span>
+<span class="sd">            individuals and prevent individuals converging into a narrow region </span>
+<span class="sd">            of solution space, the range of niche is a spherical area. It is </span>
+<span class="sd">            fixed by the user at some estimate of the minimal separation </span>
+<span class="sd">            expected between the goal solutions, by default 1.</span>
+<span class="sd">        multithread_mode : bool, optional</span>
+<span class="sd">            By default False.</span>
+<span class="sd">        history_recover_fitness : bool, optional</span>
+<span class="sd">            If a solution is already seen, the algorithm takes the old value </span>
+<span class="sd">            without computing the objective function, by default False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">crossover_rate</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Crossover Rate must take values between 0 and 1.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">mutation_rate</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mutation Rate must take values between 0 and 1.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">length_mutation_rate</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length Mutation Rate must take values between 0 and 1.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">prc_tournament_size</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The percentage of tournament size must take values &quot;</span>
+                             <span class="s2">&quot;between 0 and 1.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">population_size</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Population size is very small.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">candidate_size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Candidate must be at least 2.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_generation</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Generation must be positive.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Chromosome already seen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span> <span class="o">=</span> <span class="n">objective_function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_display_function</span> <span class="o">=</span> <span class="n">display_function</span>
+
+        <span class="c1"># Parameter of classic Genetic Algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chromosome_set</span> <span class="o">=</span> <span class="n">chromosome_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_length_set</span> <span class="o">=</span> <span class="n">chromosome_length_set</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">population_size</span> <span class="c1"># even number of population size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_population_size</span> <span class="o">=</span> <span class="n">p</span> <span class="k">if</span> <span class="n">p</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">p</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_generation</span> <span class="o">=</span> <span class="n">max_generation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_crossover_rate</span> <span class="o">=</span> <span class="n">crossover_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mutation_rate</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+
+        <span class="c1"># MultiObjective variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">optimal_fitness</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_objective</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">optimal_fitness</span><span class="p">)</span>
+
+        <span class="c1"># Variable length chromosome variable</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_length_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_rate</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_rate</span> <span class="o">=</span> <span class="n">length_mutation_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_length_set</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">chromosome_length_set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_length_set</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">chromosome_length_set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_growth_rate</span> <span class="o">=</span> <span class="n">growth_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shrink_rate</span> <span class="o">=</span> <span class="n">shrink_rate</span>
+
+        <span class="c1"># Pareto Niched Selection Tournament parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span> <span class="o">=</span> <span class="n">candidate_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_dom</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">prc_tournament_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_population_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_niched_radius</span> <span class="o">=</span> <span class="n">niche_radius</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_multithread_mode</span> <span class="o">=</span> <span class="n">multithread_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history_recover_fitness</span> <span class="o">=</span> <span class="n">history_recover_fitness</span>
+
+        <span class="c1"># Statistic parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span> <span class="o">=</span> <span class="n">Statistics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_solution_to_history_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">genes</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> 
+                                      <span class="n">fitnessfominimise</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_recover_fitness</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Chromosome</span><span class="p">(</span><span class="n">genes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">genes</span><span class="p">),</span> <span class="n">fitness</span><span class="p">,</span> 
+                                            <span class="n">fitnessfominimise</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_already_seen_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">genes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_recover_fitness</span><span class="p">:</span><span class="c1"># and (genes in self.history[&#39;genes&#39;]):</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">genes</span> <span class="o">==</span> <span class="n">genes</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">entry</span><span class="p">,</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_objective_function_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">genes</span><span class="p">,</span> <span class="n">queue</span><span class="p">):</span>
+
+        <span class="n">entry</span><span class="p">,</span> <span class="n">history_found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_already_seen_solution</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+
+        <span class="c1"># Check if the solution are previously calculated</span>
+        <span class="k">if</span> <span class="n">history_found</span><span class="p">:</span>
+            <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">genes</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">problem_type</span><span class="p">,</span> <span class="n">history_found</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="c1"># Unpack the results of the objective functions </span>
+            <span class="c1"># into separate arrays for fitness and problem types</span>
+            <span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="p">(</span><span class="n">genes</span><span class="p">))</span>
+
+            <span class="c1"># Convert the fitness array to a NumPy array of type np.float64</span>
+            <span class="n">fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fitness</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+            <span class="c1"># Convert the problem types array to a NumPy array</span>
+            <span class="n">problem_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">problem_types</span><span class="p">)</span>
+
+            <span class="c1"># Put the solutions on atomic queue</span>
+            <span class="n">queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">genes</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">,</span> <span class="n">history_found</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_check_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">):</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">problem_type</span> <span class="o">==</span> <span class="s1">&#39;minimize&#39;</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="n">found</span> <span class="ow">and</span> <span class="p">(</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">problem_type</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="n">found</span> <span class="ow">and</span> <span class="p">(</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimal_fitness</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">found</span>
+
+    <span class="k">def</span> <span class="nf">_convert_maximize_to_minimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">):</span>
+
+        <span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_number_objective</span><span class="p">,),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># I want to convert all functions which are to</span>
+        <span class="c1"># be minimized into a form which allows their</span>
+        <span class="c1"># maximization.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">fitness</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)):</span>
+
+            <span class="k">if</span> <span class="n">problem_type</span> <span class="o">==</span> <span class="s1">&#39;minimize&#39;</span><span class="p">:</span>
+                <span class="n">fitness_to_minimize</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">fitness</span>
+            <span class="c1"># Maximization problem is the negation of Minimazion problem</span>
+            <span class="k">elif</span> <span class="n">problem_type</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span><span class="p">:</span>
+                <span class="n">fitness_to_minimize</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">fitness</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Problem type can be minimize or maximize.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fitness_to_minimize</span>
+
+    <span class="k">def</span> <span class="nf">_multithread_evaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Submit a new task to the thread pool for each </span>
+<span class="sd">        chromosome in the population</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># Queue to store objective function results</span>
+        <span class="n">queued_request</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">chromosome</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">:</span>
+                <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_objective_function_thread</span><span class="p">,</span> 
+                                <span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="p">,</span> <span class="n">queued_request</span><span class="p">)</span>
+
+        <span class="n">tmp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">queued_request</span><span class="o">.</span><span class="n">qsize</span><span class="p">()):</span>
+            <span class="n">genes</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">,</span> <span class="n">history_found</span> <span class="o">=</span> <span class="n">queued_request</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_maximize_to_minimize</span><span class="p">(</span><span class="n">fitness</span><span class="p">,</span>
+                                                                     <span class="n">problem_types</span><span class="p">)</span>
+
+            <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Chromosome</span><span class="p">(</span><span class="n">genes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">genes</span><span class="p">),</span> <span class="n">fitness</span><span class="p">,</span> 
+                                  <span class="n">fitness_to_minimize</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">))</span>
+
+            <span class="c1"># Store chromosome in already seen list</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">history_found</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add_solution_to_history_list</span><span class="p">(</span><span class="n">genes</span><span class="p">,</span> <span class="n">fitness</span><span class="p">,</span> 
+                                                   <span class="n">fitness_to_minimize</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)</span>
+
+            <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_solution</span><span class="p">(</span><span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">tmp</span>
+
+        <span class="n">pareto_solutions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_display_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_display_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pareto_solutions</span><span class="p">,</span> <span class="n">found</span>
+
+    <span class="k">def</span> <span class="nf">_evaluation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the fitness of each candidate solution based on </span>
+<span class="sd">        the objective functions and any constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multithread_mode</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multithread_evaluation</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">chromosome</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">:</span>
+            <span class="n">entry</span><span class="p">,</span> <span class="n">history_found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_already_seen_solution</span><span class="p">(</span><span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">history_found</span><span class="p">:</span>
+                <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">fitness</span>
+                <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">fitness_to_minimize</span>
+                <span class="n">chromosome</span><span class="o">.</span><span class="n">problem_type</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">problem_type</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="c1"># Unpack the results of the objective functions </span>
+                <span class="c1"># into separate arrays for fitness and problem types</span>
+                <span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_objective_function</span><span class="p">(</span><span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+
+                <span class="c1"># Convert the fitness array to a NumPy array of type np.float64</span>
+                <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fitness</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+                <span class="c1"># Convert the problem types array to a NumPy array</span>
+                <span class="n">problem_types</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">problem_types</span><span class="p">)</span>
+
+                <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness_to_minimize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_maximize_to_minimize</span><span class="p">(</span>
+                    <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)</span>
+
+                <span class="c1"># Store chromosome in already seen list</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add_solution_to_history_list</span><span class="p">(</span><span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="p">,</span> 
+                                                    <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span>
+                                                    <span class="n">chromosome</span><span class="o">.</span><span class="n">fitness_to_minimize</span><span class="p">,</span> 
+                                                    <span class="n">problem_types</span><span class="p">)</span>
+
+                <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_solution</span><span class="p">(</span><span class="n">chromosome</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">problem_types</span><span class="p">)</span>
+
+        <span class="n">pareto_solutions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_display_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statistics</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pareto_solutions</span><span class="p">,</span> <span class="n">found</span>
+
+    <span class="k">def</span> <span class="nf">_pareto_domination_tournment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Few candidate chromosomes and a comparison set, of size t_dom, of</span>
+<span class="sd">        chromosomes are chosen for selection at random from the population.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">compareindexset</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_population_size</span><span class="p">),</span>
+                                        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_dom</span><span class="p">)</span>
+
+        <span class="c1"># Each of candidates are then compared against each individual</span>
+        <span class="c1"># in the comparison set.</span>
+        <span class="n">non_dominatedable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compareindexset</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span><span class="p">]):</span>
+            <span class="n">costs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_dom</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_objective</span><span class="p">),</span>
+                                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fitness_to_minimize</span>
+
+            <span class="k">for</span> <span class="n">z</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compareindexset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span><span class="p">:]):</span>
+                <span class="n">costs</span><span class="p">[</span><span class="n">z</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">fitness_to_minimize</span>
+
+            <span class="c1"># I want to know if first add fitness is non dominatedable</span>
+            <span class="n">non_dominatedable</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_is_non_dominatedable</span><span class="p">(</span><span class="n">costs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If one candidate is dominate by the comparison set, and the other</span>
+<span class="sd">        is not, the latter is selected for reproduction. If neither or both</span>
+<span class="sd">        are dominated by the comparison set, then we must use sharing to</span>
+<span class="sd">        choose a winner.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">non_dominatedable</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">itemindex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">non_dominatedable</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">candidateindex</span> <span class="o">=</span> <span class="n">compareindexset</span><span class="p">[</span><span class="n">itemindex</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">candidateindex</span><span class="p">],</span> <span class="kc">False</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">compareindexset</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_fitness_sharing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate_indexes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies fitness sharing to the candidates in `candidate_indexes`, </span>
+<span class="sd">        which are assumed to belong to the same niche.</span>
+<span class="sd">    </span>
+<span class="sd">        Fitness sharing is a mechanism that encourages diversity by </span>
+<span class="sd">        penalizing the fitness of similar solutions. In this</span>
+<span class="sd">        implementation, the fitness of each candidate is divided by </span>
+<span class="sd">        the sum of the niche counts of all candidates that are</span>
+<span class="sd">        within a certain distance from it.</span>
+<span class="sd">    </span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        candidate_indexes (array-like): The indices of the candidates to be evaluated.</span>
+<span class="sd">    </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Chromosome: The selected candidate, which has the smallest niche count.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidate_size</span><span class="p">,),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidate_indexes</span><span class="p">):</span>
+            <span class="n">distances</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_niched_count_calculation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># If we want to maintain useful diversity, it would be best to</span>
+        <span class="c1"># choose the candidate that has the smaller niche count.</span>
+        <span class="n">itemindex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">distances</span> <span class="o">==</span> <span class="n">distances</span><span class="o">.</span><span class="n">min</span><span class="p">())[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">candidateindex</span> <span class="o">=</span> <span class="n">candidate_indexes</span><span class="p">[</span><span class="n">itemindex</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">candidateindex</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_niched_count_calculation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cadidate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The niche count is initialized to zero, and is updated </span>
+<span class="sd">        foreach near neighbor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">niche_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">individual</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            The formula increments the niche count by </span>
+<span class="sd">            (1 - (neighbor_distance / niched_radius)) </span>
+<span class="sd">            if the neighbor distance is less then niched radius.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="n">neighbor_distance</span> <span class="o">=</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_euclidean_distance</span><span class="p">(</span>
+                <span class="n">cadidate</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">neighbor_distance</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_niched_radius</span><span class="p">:</span>
+                <span class="n">sh</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">neighbor_distance</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_niched_radius</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sh</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">niche_count</span> <span class="o">=</span> <span class="n">niche_count</span> <span class="o">+</span> <span class="n">sh</span>
+
+        <span class="k">return</span> <span class="n">niche_count</span>
+
+    <span class="k">def</span> <span class="nf">_selection_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Selection maintains diversity in the population and </span>
+<span class="sd">        ensures that the best chromosomes are passed on to the next generation.</span>
+
+<span class="sd">        A small number of chromosomes are selected at random</span>
+<span class="sd">        from the population, and the best chromosome among </span>
+<span class="sd">        the selected chromosomes is chosen for the next generation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_population_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">):</span>
+
+            <span class="c1"># Pareto Domination Tournment Selection</span>
+            <span class="n">parent_1</span><span class="p">,</span> <span class="n">dominated</span><span class="p">,</span> <span class="n">candidate_indexes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pareto_domination_tournment</span><span class="p">()</span>
+
+            <span class="c1"># Fitness Sharing if applicable</span>
+            <span class="k">if</span> <span class="n">dominated</span><span class="p">:</span>
+                <span class="n">parent_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fitness_sharing</span><span class="p">(</span><span class="n">candidate_indexes</span><span class="p">)</span>
+
+            <span class="c1"># Pareto Domination Tournment Selection</span>
+            <span class="n">parent_2</span><span class="p">,</span> <span class="n">dominated</span><span class="p">,</span> <span class="n">candidate_indexes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pareto_domination_tournment</span><span class="p">()</span>
+
+            <span class="c1"># Fitness Sharing if applicable</span>
+            <span class="k">if</span> <span class="n">dominated</span><span class="p">:</span>
+                <span class="n">parent_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fitness_sharing</span><span class="p">(</span><span class="n">candidate_indexes</span><span class="p">)</span>
+
+            <span class="k">yield</span> <span class="p">(</span><span class="n">parent_1</span><span class="p">,</span> <span class="n">parent_2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_generation_initial_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># It generates random string</span>
+        <span class="n">genlen</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_length_set</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_chromosome_set</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">genlen</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">genlen</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_shrink_mutation_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shrink mutation is a type of mutation operation that </span>
+<span class="sd">        reduces the magnitude of the gene values. </span>
+<span class="sd">        </span>
+<span class="sd">        The operation is performed by subtracting a random </span>
+<span class="sd">        value from the gene value, with the magnitude of the </span>
+<span class="sd">        random value proportional to the magnitude of the gene value. </span>
+
+<span class="sd">        This operation can be used to reduce the size of </span>
+<span class="sd">        large gene values and to prevent the search from </span>
+<span class="sd">        getting stuck in large, but suboptimal, regions of the search space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">lengthset</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_set</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">]</span>
+        <span class="n">mutationLenght</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">lengthset</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mutationquantity</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span> <span class="o">-</span> <span class="n">mutationLenght</span>
+
+        <span class="c1"># It erases genes at the end</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">genes</span><span class="p">[:</span><span class="o">-</span><span class="n">mutationquantity</span><span class="p">])</span>
+
+        <span class="c1"># Erase genes length</span>
+        <span class="k">return</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span> <span class="o">-</span> <span class="n">mutationquantity</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_growth_mutation_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Growth mutation is a type of mutation operation that </span>
+<span class="sd">        increases the magnitude of the gene values. </span>
+<span class="sd">        </span>
+<span class="sd">        The operation is performed by adding a random value </span>
+<span class="sd">        to the gene value, with the magnitude of the random </span>
+<span class="sd">        value proportional to the magnitude of the gene value. </span>
+
+<span class="sd">        This operation can be used to increase the size of </span>
+<span class="sd">        small gene values and to allow the search to explore </span>
+<span class="sd">        new regions of the search space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">lengthset</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_set</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">]</span>
+        <span class="n">mutationLenght</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">lengthset</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mutationquantity</span> <span class="o">=</span> <span class="n">mutationLenght</span> <span class="o">-</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span>
+
+        <span class="c1"># Insert random correct genes at the end of chromosome.</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">genes</span><span class="p">)</span>
+
+        <span class="c1"># It grows at the end</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_chromosome_set</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">mutationquantity</span><span class="p">))</span>
+
+        <span class="c1"># Add genes length</span>
+        <span class="k">return</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="n">mutationquantity</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_length_mutation_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This operation can be used to increase or to reduce the size of </span>
+<span class="sd">        gene values to allow the search to explore new regions of the search </span>
+<span class="sd">        space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_flip_coin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_rate</span><span class="p">):</span>
+
+            <span class="c1"># Check if the length of the parent&#39;s chromosome matches the </span>
+            <span class="c1"># maximum or minimum length set</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_length_set</span> <span class="o">==</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shrink_mutation_operation</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_length_set</span> <span class="o">==</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_growth_mutation_operation</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+            <span class="c1"># Create a dictionary that maps integers to the two functions</span>
+            <span class="n">switcher</span> <span class="o">=</span> <span class="p">{</span> 
+                <span class="mi">0</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_growth_mutation_operation</span><span class="p">,</span> 
+                <span class="mi">1</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shrink_mutation_operation</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Store the probabilities in a list</span>
+            <span class="n">probabilities</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_growth_rate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shrink_rate</span><span class="p">]</span>
+
+            <span class="c1"># Normalize the probabilities so they sum up to 1</span>
+            <span class="n">normalized_probabilities</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">probabilities</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">probabilities</span><span class="p">]</span>
+
+            <span class="c1"># Calculate the cumulative probability for each function</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">normalized_probabilities</span><span class="p">[:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+
+            <span class="c1"># Generate a random number between 0 and 1</span>
+            <span class="n">arrow</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+            <span class="c1"># Loop over the cumulative probabilities and select the function</span>
+            <span class="c1"># corresponding to the first cumulative probability that the arrow</span>
+            <span class="c1"># is less than or equal to</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">interval_end</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">arrow</span> <span class="o">&lt;=</span> <span class="n">interval_end</span><span class="p">:</span>
+                    <span class="c1"># Get the selected function from the dictionary</span>
+                    <span class="n">function</span> <span class="o">=</span> <span class="n">switcher</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="k">lambda</span> <span class="p">:</span><span class="s1">&#39;Invalid&#39;</span><span class="p">)</span>
+
+                    <span class="c1"># Return and execute the selected function</span>
+                    <span class="k">return</span> <span class="n">function</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parent</span>
+
+    <span class="k">def</span> <span class="nf">_mutation_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Mutation consists of the variation of a randomly chosen bit, </span>
+<span class="sd">        belonging to a randomly selected string.</span>
+
+<span class="sd">        If there is no mutation, offspring is taken without any change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+
+            <span class="c1"># Mutation probability says how often will be parts of chromosome mutated.</span>
+            <span class="k">if</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_flip_coin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutation_rate</span><span class="p">):</span>
+                <span class="n">new_gene</span><span class="p">,</span> <span class="n">new_gene_alternate</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_chromosome_set</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_gene_alternate</span> 
+                             <span class="k">if</span> <span class="n">new_gene</span> <span class="o">==</span> <span class="n">parent</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+                             <span class="k">else</span> <span class="n">new_gene</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_crossover_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_1</span><span class="p">,</span> <span class="n">parent_2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Two points on both parents&#39; chromosomes is picked randomly, and</span>
+<span class="sd">        designated &#39;crossover points&#39;. This results in</span>
+<span class="sd">        two offspring, each carrying some genetic information from both parents.</span>
+
+<span class="sd">        Crossover probability says how often will be crossover performed.</span>
+<span class="sd">        If there is no crossover, offspring is exact copy of parents.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">_Utility</span><span class="o">.</span><span class="n">_flip_coin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_crossover_rate</span><span class="p">):</span>
+            <span class="n">child_1</span><span class="p">,</span> <span class="n">child_2</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+            <span class="c1"># The lengths of both the parent chromosomes are checked and the</span>
+            <span class="c1"># chromosome whose length is smaller is taken as parent A.</span>
+            <span class="n">len_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">parent_1</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">parent_2</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_1</span><span class="o">.</span><span class="n">length</span> <span class="o">!=</span> <span class="n">len_min</span><span class="p">:</span>
+                <span class="c1"># Swap the two strings</span>
+                <span class="n">parent_1</span><span class="p">,</span> <span class="n">parent_2</span> <span class="o">=</span> <span class="n">parent_2</span><span class="p">,</span> <span class="n">parent_1</span>
+
+            <span class="c1"># Crossover points are randomly chosen for parent A</span>
+            <span class="n">startpoint</span><span class="p">,</span> <span class="n">endpoint</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">len_min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">startpoint</span><span class="p">,</span> <span class="n">endpoint</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">startpoint</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">startpoint</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">)</span>
+                
+            <span class="c1"># The genetic material in the two parents is exchanged </span>
+            <span class="c1"># between the two crossover points of the parents</span>
+            <span class="n">child_1</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">startpoint</span><span class="p">])</span>
+            <span class="n">child_1</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">startpoint</span><span class="p">:</span><span class="n">endpoint</span><span class="p">])</span>
+            <span class="n">child_1</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">endpoint</span><span class="p">:])</span>
+
+            <span class="n">child_2</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">startpoint</span><span class="p">])</span>
+            <span class="n">child_2</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">startpoint</span><span class="p">:</span><span class="n">endpoint</span><span class="p">])</span>
+            <span class="n">child_2</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">endpoint</span><span class="p">:])</span>
+
+            <span class="k">return</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">child_1</span><span class="p">,</span> <span class="n">parent_2</span><span class="o">.</span><span class="n">length</span><span class="p">),</span> \
+                <span class="n">Chromosome</span><span class="p">(</span><span class="n">child_2</span><span class="p">,</span> <span class="n">parent_1</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parent_1</span><span class="p">,</span> <span class="n">parent_2</span>
+
+<div class="viewcode-block" id="Algorithm.run"><a class="viewcode-back" href="../../npga.html#npga.algorithm.Algorithm.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The main function of the genetic algorithm that </span>
+<span class="sd">        initializes the population and uses selection,</span>
+<span class="sd">        crossover, and mutation to find optimal solutions.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pareto_solutions</span>
+<span class="sd">            A list of solutions belonging to the Pareto front.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Initialize population</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_population_size</span><span class="p">):</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generation_initial_population</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+        <span class="c1"># Main loop of the genetic algorithm</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_generation</span><span class="p">):</span>
+            <span class="c1"># Calculation of fitness</span>
+            <span class="n">pareto_solutions</span><span class="p">,</span> <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluation</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pareto_solutions</span>
+
+            <span class="c1"># Operators</span>
+            <span class="n">new_population</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">parent_a</span><span class="p">,</span> <span class="n">parent_b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection_operation</span><span class="p">():</span>
+                <span class="n">child_1</span><span class="p">,</span> <span class="n">child_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_crossover_operation</span><span class="p">(</span><span class="n">parent_a</span><span class="p">,</span> <span class="n">parent_b</span><span class="p">)</span>
+                <span class="n">child_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mutation_operation</span><span class="p">(</span><span class="n">child_1</span><span class="p">)</span>
+                <span class="n">child_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mutation_operation</span><span class="p">(</span><span class="n">child_2</span><span class="p">)</span>
+
+                <span class="c1"># Length Operator</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_rate</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">child_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_operation</span><span class="p">(</span><span class="n">child_1</span><span class="p">)</span>
+                    <span class="n">child_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_length_mutation_operation</span><span class="p">(</span><span class="n">child_2</span><span class="p">)</span>
+
+                <span class="c1"># Add to current population</span>
+                <span class="n">new_population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_1</span><span class="p">)</span>
+                <span class="n">new_population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_2</span><span class="p">)</span>
+
+            <span class="c1"># Replace Population</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">new_population</span>
+
+        <span class="k">return</span> <span class="n">pareto_solutions</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">npga</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Emilio Schinina.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.1.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
