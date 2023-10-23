@@ -33,6 +33,17 @@ And later it is possible to import in code with:
 import npga as ga
 ```
 
+## Local Installation
+You could also clone the repository and then manually install the dependencies before running the setup script:
+
+```bash
+git clone https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA.git
+cd Niched-Pareto-Genetic-Algorithm-NPGA
+pip3 install -r requirements.txt  # if a requirements file exists
+pip3 install numpy  # if no requirements file exists
+python3 setup.py install
+```
+
 ## Methods
 
 ### NichedParetoGeneticAlgorithm
