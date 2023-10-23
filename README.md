@@ -24,9 +24,18 @@ Goldberg and Richardson defined a sharing function [3]. They describe the idea o
 
 
 ## Installation
-When NumPy has been installed, NPGA can be installed using pip as follows:
+When NumPy has been installed as:
 ```bash
- pip3 install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
+pip install numpy
+```
+or if you install numpy using Conda, write the following command:
+```bash
+conda install numpy
+```
+
+So, npga can be installed using pip as follows:
+```bash
+pip install git+https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA
 ```
 And later it is possible to import in code with:
 ```python
@@ -39,9 +48,9 @@ You could also clone the repository and then manually install the dependencies b
 ```bash
 git clone https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA.git
 cd Niched-Pareto-Genetic-Algorithm-NPGA
-pip3 install -r requirements.txt  # if a requirements file exists
-pip3 install numpy  # if no requirements file exists
-python3 setup.py install
+pip install -r requirements.txt  # if a requirements file exists
+pip install numpy  # if no requirements file exists
+python setup.py install
 ```
 
 ## Methods
