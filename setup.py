@@ -16,5 +16,6 @@ setup(
 	version = __version__,
 	packages=['npga'],
 	install_requires=['numpy'],
+	setup_requires=['numpy'],
 	classifiers=("Programming Language :: Python :: 3"),
 )
